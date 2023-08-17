@@ -37,9 +37,9 @@ class MainActivity : ComponentActivity() {
         authenticateSpotify()
         SoLoader.init(this, false)
 
-        if (FlipperUtils.shouldEnableFlipper(this)) {
+        if (BuildConfig.DEBUG && FlipperUtils.shouldEnableFlipper(this)) {
             val client = AndroidFlipperClient.getInstance(this)
-            client.addPlugin(InspectorFlipperPlugin(this, DescriptorMapping.withDefaults()))
+            client.addPlugin(InspectorFlipperPlugin(applicationContext, DescriptorMapping.withDefaults()))
             client.start()
         }
 
