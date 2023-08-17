@@ -1,0 +1,41 @@
+* {
+    font-family: 'Calibri', sans-serif;
+    font-size: 10px;
+    margin: 0 0 0 0;
+}
+
+.container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 2.6rem;
+    margin-bottom: 2.6rem;
+    gap: 2.8rem;
+}
+
+.entry {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.8rem;
+    padding-left: 24.2rem;
+    padding-right: 24.2rem;
+}
+
+.date-header {
+    font-size: 3rem;
+    font-weight: 800;
+}
+
+.paragraphs {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.8rem;
+}
+
+.paragraph {
+    font-size: 2rem;
+    line-height: 3.2rem;
+    text-align: center;
+}
