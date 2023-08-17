@@ -63,9 +63,6 @@ dependencies {
     implementation(libs.ui.graphics)
     implementation(libs.ui.tooling.preview)
     implementation(libs.material3)
-    implementation("com.spotify.android:auth:2.0.2")
-    implementation("com.android.volley:volley:1.2.1")
-    implementation("com.google.code.gson:gson:2.10.1")
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.test.ext.junit)
@@ -74,4 +71,15 @@ dependencies {
     androidTestImplementation(libs.ui.test.junit4)
     debugImplementation(libs.ui.tooling)
     debugImplementation(libs.ui.test.manifest)
+
+    /*** CUSTOM ***/
+    // Spotify
+    implementation("com.spotify.android:auth:2.0.2")
+    implementation("com.android.volley:volley:1.2.1")
+    implementation("com.google.code.gson:gson:2.10.1")
+
+    // Flipper
+    debugImplementation("com.facebook.flipper:flipper:0.211.1")
+    debugImplementation("com.facebook.soloader:soloader:0.10.5")
+    releaseImplementation("com.facebook.flipper:flipper-noop:0.211.1")
 }

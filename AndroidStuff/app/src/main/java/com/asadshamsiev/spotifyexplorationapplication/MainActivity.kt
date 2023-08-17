@@ -19,6 +19,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.asadshamsiev.spotifyexplorationapplication.ui.theme.AppTheme
+import com.facebook.flipper.android.AndroidFlipperClient
+import com.facebook.flipper.android.utils.FlipperUtils
+import com.facebook.flipper.plugins.inspector.DescriptorMapping
+import com.facebook.flipper.plugins.inspector.InspectorFlipperPlugin
+import com.facebook.soloader.SoLoader
 import com.spotify.sdk.android.auth.AuthorizationClient
 import com.spotify.sdk.android.auth.AuthorizationRequest
 import com.spotify.sdk.android.auth.AuthorizationResponse
@@ -28,8 +33,16 @@ class MainActivity : ComponentActivity() {
     private val REDIRECT_URI = "com.asadshamsiev.spotifyexplorationapplication://callback"
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        authenticateSpotify()
         super.onCreate(savedInstanceState)
+        authenticateSpotify()
+        SoLoader.init(this, false)
+
+        if (FlipperUtils.shouldEnableFlipper(this)) {
+            val client = AndroidFlipperClient.getInstance(this)
+            client.addPlugin(InspectorFlipperPlugin(this, DescriptorMapping.withDefaults()))
+            client.start()
+        }
+
         setContent {
             AppTheme {
                 MainScreen()
@@ -50,11 +63,12 @@ class MainActivity : ComponentActivity() {
         AuthorizationClient.openLoginActivity(this, REQUEST_CODE, request)
     }
 
+    @Deprecated("Deprecated in Java")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
 
         // Check if result comes from the correct activity.
-        if (requestCode === REQUEST_CODE) {
+        if (requestCode == REQUEST_CODE) {
             val response = AuthorizationClient.getResponse(resultCode, intent)
             when (response.type) {
                 AuthorizationResponse.Type.TOKEN -> {
