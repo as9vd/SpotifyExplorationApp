@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -31,9 +32,6 @@ import com.spotify.sdk.android.auth.LoginActivity.REQUEST_CODE
 import com.spotify.android.appremote.api.ConnectionParams;
 import com.spotify.android.appremote.api.Connector;
 import com.spotify.android.appremote.api.SpotifyAppRemote;
-import com.spotify.protocol.client.Subscription;
-import com.spotify.protocol.types.PlayerState;
-import com.spotify.protocol.types.Track;
 
 class MainActivity : ComponentActivity() {
     private val clientId = "d6d33d89d3a044618291f268d1eea409"
@@ -61,7 +59,7 @@ class MainActivity : ComponentActivity() {
             }
         })
 
-        authenticateSpotify()
+        // authenticateSpotify()
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -135,6 +133,11 @@ class MainActivity : ComponentActivity() {
                     textFieldQuery.value = it
                 }
             )
+            Button(onClick = {
+                spotifyAppRemote?.playerApi?.play("spotify:track:01Lr5YepbgjXAWR9iOEyH1")
+            }) {
+                Text("Click to play Love Sosa")
+            }
         }
     }
 }
