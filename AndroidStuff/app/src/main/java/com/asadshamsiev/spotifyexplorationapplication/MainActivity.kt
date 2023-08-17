@@ -1,6 +1,5 @@
 package com.asadshamsiev.spotifyexplorationapplication
 
-import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
@@ -19,24 +18,27 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.lifecycleScope
+import com.adamratzman.spotify.SpotifyAppApi
+import com.adamratzman.spotify.endpoints.pub.SearchApi
+import com.adamratzman.spotify.spotifyAppApi
 import com.asadshamsiev.spotifyexplorationapplication.ui.theme.AppTheme
 import com.facebook.flipper.android.AndroidFlipperClient
 import com.facebook.flipper.android.utils.FlipperUtils
 import com.facebook.flipper.plugins.inspector.DescriptorMapping
 import com.facebook.flipper.plugins.inspector.InspectorFlipperPlugin
 import com.facebook.soloader.SoLoader
-import com.spotify.sdk.android.auth.AuthorizationClient
-import com.spotify.sdk.android.auth.AuthorizationRequest
-import com.spotify.sdk.android.auth.AuthorizationResponse
-import com.spotify.sdk.android.auth.LoginActivity.REQUEST_CODE
 import com.spotify.android.appremote.api.ConnectionParams;
 import com.spotify.android.appremote.api.Connector;
 import com.spotify.android.appremote.api.SpotifyAppRemote;
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
     private val clientId = "d6d33d89d3a044618291f268d1eea409"
+    private val clientSecret = "58f5caf8a73b439689b108824daf4c79"
     private val redirectUri = "com.asadshamsiev.spotifyexplorationapplication://callback"
     private var spotifyAppRemote: SpotifyAppRemote? = null
+    private lateinit var publicSpotifyAppApi: SpotifyAppApi
 
     override fun onStart() {
         super.onStart()
@@ -55,11 +57,18 @@ class MainActivity : ComponentActivity() {
 
             override fun onFailure(throwable: Throwable) {
                 Log.e("SpotifyStuff", throwable.message, throwable)
-                // Something went wrong when attempting to connect! Handle errors here
             }
         })
 
-        // authenticateSpotify()
+        lifecycleScope.launch {
+            buildSpotifyPublicApi()
+        }
+    }
+
+    private suspend fun buildSpotifyPublicApi() {
+        publicSpotifyAppApi = spotifyAppApi(clientId = clientId, clientSecret = clientSecret).build(
+            enableDefaultTokenRefreshProducerIfNoneExists = true
+        )
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -68,7 +77,12 @@ class MainActivity : ComponentActivity() {
         if (BuildConfig.DEBUG && FlipperUtils.shouldEnableFlipper(this)) {
             SoLoader.init(this, false)
             val client = AndroidFlipperClient.getInstance(this)
-            client.addPlugin(InspectorFlipperPlugin(applicationContext, DescriptorMapping.withDefaults()))
+            client.addPlugin(
+                InspectorFlipperPlugin(
+                    applicationContext,
+                    DescriptorMapping.withDefaults()
+                )
+            )
             client.start()
         }
 
@@ -79,43 +93,12 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun authenticateSpotify() {
-        val builder = AuthorizationRequest.Builder(
-            "d6d33d89d3a044618291f268d1eea409",
-            AuthorizationResponse.Type.TOKEN,
-            redirectUri
-        )
-
-        builder.setScopes(listOf("streaming").toTypedArray())
-        val request: AuthorizationRequest = builder.build()
-
-        AuthorizationClient.openLoginActivity(this, REQUEST_CODE, request)
-    }
-
-    @Deprecated("Deprecated in Java")
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-
-        // Check if result comes from the correct activity.
-        if (requestCode == REQUEST_CODE) {
-            val response = AuthorizationClient.getResponse(resultCode, intent)
-            when (response.type) {
-                AuthorizationResponse.Type.TOKEN -> {
-                    Log.d("SpotifyStuff", "Thank goodness.")
-                }
-                AuthorizationResponse.Type.ERROR -> {}
-                AuthorizationResponse.Type.EMPTY -> {
-                    Log.d("SpotifyStuff", "It's empty.")
-                }
-                else -> {}
-            }
-        }
-    }
-
     @Composable
     @OptIn(ExperimentalMaterial3Api::class)
     fun MainScreen() {
         val textFieldQuery = remember { mutableStateOf("") }
+        val songFound = remember { mutableStateOf("No song found mate.") }
+
         Column(
             modifier = Modifier
                 .padding(all = 16.dp)
@@ -134,10 +117,27 @@ class MainActivity : ComponentActivity() {
                 }
             )
             Button(onClick = {
-                spotifyAppRemote?.playerApi?.play("spotify:track:01Lr5YepbgjXAWR9iOEyH1")
+                spotifyAppRemote?.playerApi?.play("spotify:track:0VgkVdmE4gld66l8iyGjgx")
             }) {
-                Text("Click to play Love Sosa")
+                Text("Click to play Mask Off")
             }
+            Button(onClick = {
+                if (::publicSpotifyAppApi.isInitialized) {
+                    lifecycleScope.launch {
+                        val res = publicSpotifyAppApi.search.search(
+                            query = "Playboi Carti Sky",
+                            searchTypes = listOf(SearchApi.SearchType.Track).toTypedArray()
+                        )
+                        songFound.value =
+                            (res.tracks?.get(0)?.artists.toString() +
+                                res.tracks?.get(0)?.name)
+                    }
+
+                }
+            }) {
+                Text("Click to do some fancy search bollocks")
+            }
+            Text("Sound found:" + songFound.value)
         }
     }
 }

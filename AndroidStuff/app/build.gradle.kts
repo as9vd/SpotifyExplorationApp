@@ -83,6 +83,10 @@ dependencies {
     //noinspection UseTomlInstead
     implementation("com.google.code.gson:gson:2.10.1")
 
+    // https://github.com/adamint/spotify-web-api-kotlin
+    //noinspection UseTomlInstead
+    implementation("com.adamratzman:spotify-api-kotlin-core:4.0.2")
+
     // Flipper
 
     //noinspection UseTomlInstead
