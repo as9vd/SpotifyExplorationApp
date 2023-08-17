@@ -28,16 +28,47 @@ import com.spotify.sdk.android.auth.AuthorizationClient
 import com.spotify.sdk.android.auth.AuthorizationRequest
 import com.spotify.sdk.android.auth.AuthorizationResponse
 import com.spotify.sdk.android.auth.LoginActivity.REQUEST_CODE
+import com.spotify.android.appremote.api.ConnectionParams;
+import com.spotify.android.appremote.api.Connector;
+import com.spotify.android.appremote.api.SpotifyAppRemote;
+import com.spotify.protocol.client.Subscription;
+import com.spotify.protocol.types.PlayerState;
+import com.spotify.protocol.types.Track;
 
 class MainActivity : ComponentActivity() {
-    private val REDIRECT_URI = "com.asadshamsiev.spotifyexplorationapplication://callback"
+    private val clientId = "d6d33d89d3a044618291f268d1eea409"
+    private val redirectUri = "com.asadshamsiev.spotifyexplorationapplication://callback"
+    private var spotifyAppRemote: SpotifyAppRemote? = null
+
+    override fun onStart() {
+        super.onStart()
+
+        // Set the connection parameters.
+        val connectionParams = ConnectionParams.Builder(clientId)
+            .setRedirectUri(redirectUri)
+            .showAuthView(true)
+            .build()
+
+        SpotifyAppRemote.connect(this, connectionParams, object : Connector.ConnectionListener {
+            override fun onConnected(appRemote: SpotifyAppRemote) {
+                spotifyAppRemote = appRemote
+                Log.d("SpotifyStuff", "Connected! Finally.")
+            }
+
+            override fun onFailure(throwable: Throwable) {
+                Log.e("SpotifyStuff", throwable.message, throwable)
+                // Something went wrong when attempting to connect! Handle errors here
+            }
+        })
+
+        authenticateSpotify()
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        authenticateSpotify()
-        SoLoader.init(this, false)
 
         if (BuildConfig.DEBUG && FlipperUtils.shouldEnableFlipper(this)) {
+            SoLoader.init(this, false)
             val client = AndroidFlipperClient.getInstance(this)
             client.addPlugin(InspectorFlipperPlugin(applicationContext, DescriptorMapping.withDefaults()))
             client.start()
@@ -54,7 +85,7 @@ class MainActivity : ComponentActivity() {
         val builder = AuthorizationRequest.Builder(
             "d6d33d89d3a044618291f268d1eea409",
             AuthorizationResponse.Type.TOKEN,
-            REDIRECT_URI
+            redirectUri
         )
 
         builder.setScopes(listOf("streaming").toTypedArray())
@@ -72,9 +103,12 @@ class MainActivity : ComponentActivity() {
             val response = AuthorizationClient.getResponse(resultCode, intent)
             when (response.type) {
                 AuthorizationResponse.Type.TOKEN -> {
-                    Log.d("Spotify Stuff", "Thank goodness.")
+                    Log.d("SpotifyStuff", "Thank goodness.")
                 }
                 AuthorizationResponse.Type.ERROR -> {}
+                AuthorizationResponse.Type.EMPTY -> {
+                    Log.d("SpotifyStuff", "It's empty.")
+                }
                 else -> {}
             }
         }

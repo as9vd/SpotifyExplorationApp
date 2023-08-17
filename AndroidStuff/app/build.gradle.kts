@@ -55,7 +55,6 @@ android {
 }
 
 dependencies {
-
     implementation(libs.core.ktx)
     implementation(libs.lifecycle.runtime.ktx)
     implementation(libs.activity.compose)
@@ -64,6 +63,7 @@ dependencies {
     implementation(libs.ui.graphics)
     implementation(libs.ui.tooling.preview)
     implementation(libs.material3)
+    implementation(files("/Users/asadbekshamsiev/Downloads/spotify-app-remote-release-0.8.0.aar"))
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.test.ext.junit)
@@ -75,12 +75,22 @@ dependencies {
 
     /*** CUSTOM ***/
     // Spotify
+
+    //noinspection UseTomlInstead
     implementation("com.spotify.android:auth:2.0.2")
+    //noinspection UseTomlInstead
     implementation("com.android.volley:volley:1.2.1")
+    //noinspection UseTomlInstead
     implementation("com.google.code.gson:gson:2.10.1")
 
     // Flipper
+
+    //noinspection UseTomlInstead
     debugImplementation("com.facebook.flipper:flipper:0.211.1")
+
+    //noinspection UseTomlInstead
     debugImplementation("com.facebook.soloader:soloader:0.10.5")
+
+    //noinspection UseTomlInstead
     releaseImplementation("com.facebook.flipper:flipper-noop:0.211.1")
 }
