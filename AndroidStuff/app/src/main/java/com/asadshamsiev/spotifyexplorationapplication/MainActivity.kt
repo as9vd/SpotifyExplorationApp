@@ -91,7 +91,7 @@ class MainActivity : ComponentActivity() {
                 enableDefaultTokenRefreshProducerIfNoneExists = true
             )
         } catch(e: Exception) {
-            Log.e("SpotifyApiError", "Failed to build Spotify public API", e)
+            Log.e("SpotifyApiError", "Failed to build Spotify public API.", e)
             spotifyApiDead = true
         }
     }
@@ -192,33 +192,39 @@ class MainActivity : ComponentActivity() {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Text("Start a Session")
-            TextField(
-                value = textFieldQuery.value,
-                placeholder = {
-                    Text("Click to start typing")
-                },
-                onValueChange = {
-                    textFieldQuery.value = it
-                }
-            )
+            if (spotifyApiDead) {
+                Text("Spotify cannot authenticate your account.")
+            } else if (localSpotifyDead) {
+                Text("You haven't got Spotify installed on your phone.")
+            } else {
+                Text("Start a Session")
+                TextField(
+                    value = textFieldQuery.value,
+                    placeholder = {
+                        Text("Click to start typing")
+                    },
+                    onValueChange = {
+                        textFieldQuery.value = it
+                    }
+                )
 
-            when {
-                textFieldQuery.value.isEmpty() -> {
-                    Text("Type something you pagan. GOATERed.") // When nothing's been typed yet.
+                when {
+                    textFieldQuery.value.isEmpty() -> {
+                        Text("Type something you pagan. GOATERed.") // When nothing's been typed yet.
+                    }
+                    isLoading.value -> {
+                        CircularProgressIndicator() // Show that it's visibly fetching results
+                    }
+                    foundStuff.isNotEmpty() -> {
+                        Text(foundStuff[0]) // Else, show the result.
+                    }
+                    else -> {
+                        Text("No results found.") // Terrible search.
+                    }
                 }
-                isLoading.value -> {
-                    CircularProgressIndicator() // Show that it's visibly fetching results
-                }
-                foundStuff.isNotEmpty() -> {
-                    Text(foundStuff[0]) // Else, show the result.
-                }
-                else -> {
-                    Text("No results found.") // Terrible search.
-                }
+
+                SpotifyCard()
             }
-
-            SpotifyCard()
         }
     }
 }
