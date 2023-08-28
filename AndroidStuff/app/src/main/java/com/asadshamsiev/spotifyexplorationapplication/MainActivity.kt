@@ -7,6 +7,7 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -142,15 +143,15 @@ class MainActivity : ComponentActivity() {
         link: String, // These'll eventually need defaults for if it craps out.
         modifier: Modifier = Modifier
     ) {
-        Card(modifier = modifier) {
+        Card(modifier = modifier.fillMaxWidth()) {
             Row(
-                modifier = Modifier.padding(0.dp),
+                modifier = Modifier.padding(0.dp).width(320.dp).height(80.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 AsyncImage(
                     model = link,
                     contentDescription = null,
-                    modifier = Modifier.height(64.dp).width(64.dp)
+                    modifier = Modifier.width(64.dp).fillMaxHeight()
                 )
                 Column {
                     Text(artistName)
@@ -171,6 +172,7 @@ class MainActivity : ComponentActivity() {
         val foundStuff = remember { mutableListOf<Triple<String, String, String>>() }
         val isLoading = remember { mutableStateOf(false) }
 
+        // Whenever the query gets updated.
         LaunchedEffect(textFieldQuery.value) {
             if (textFieldQuery.value.isNotEmpty()) {
                 // In order to show a loading Composable whilst results are fetched.
