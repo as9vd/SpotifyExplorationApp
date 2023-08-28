@@ -4,7 +4,6 @@ import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -19,12 +18,10 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.lifecycleScope
 import coil.compose.AsyncImage
@@ -38,9 +35,9 @@ import com.facebook.flipper.android.utils.FlipperUtils
 import com.facebook.flipper.plugins.inspector.DescriptorMapping
 import com.facebook.flipper.plugins.inspector.InspectorFlipperPlugin
 import com.facebook.soloader.SoLoader
-import com.spotify.android.appremote.api.ConnectionParams;
-import com.spotify.android.appremote.api.Connector;
-import com.spotify.android.appremote.api.SpotifyAppRemote;
+import com.spotify.android.appremote.api.ConnectionParams
+import com.spotify.android.appremote.api.Connector
+import com.spotify.android.appremote.api.SpotifyAppRemote
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -62,7 +59,7 @@ class MainActivity : ComponentActivity() {
         super.onStart()
 
         // Set the connection parameters.
-        val connectionParams = ConnectionParams.Builder("nonce")
+        val connectionParams = ConnectionParams.Builder(clientId)
             .setRedirectUri(redirectUri)
             .showAuthView(true)
             .build()
@@ -88,7 +85,7 @@ class MainActivity : ComponentActivity() {
 
     private suspend fun buildSpotifyPublicApi() {
         try {
-            publicSpotifyAppApi = spotifyAppApi(clientId = "boner", clientSecret = clientSecret).build(
+            publicSpotifyAppApi = spotifyAppApi(clientId = clientId, clientSecret = clientSecret).build(
                 enableDefaultTokenRefreshProducerIfNoneExists = true
             )
         } catch(e: Exception) {
@@ -115,7 +112,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             AppTheme {
                 MainScreen(
-                    spotifyApiDead.value, 
+                    spotifyApiDead.value,
                     localSpotifyDead.value
                 )
             }
@@ -140,7 +137,9 @@ class MainActivity : ComponentActivity() {
 
     @Composable
     fun SpotifyCard(
-        imageUrl: String = "https://encrypted-tbn2.gstatic.com/licensed-image?q=tbn:ANd9GcSzfok9XPsMj0PwBD8GcW17az4jVn_e5gi3JaO_F8NPiWEm-6l_k_kn276LKxYqaSiDfEd8MIdYCNBWaBQ",
+        artistName: String,
+        albumName: String,
+        link: String, // These'll eventually need defaults for if it craps out.
         modifier: Modifier = Modifier
     ) {
         Card(modifier = modifier) {
@@ -149,13 +148,13 @@ class MainActivity : ComponentActivity() {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 AsyncImage(
-                    model = imageUrl,
+                    model = link,
                     contentDescription = null,
                     modifier = Modifier.height(64.dp).width(64.dp)
                 )
                 Column {
-                    Text("Nipsey Hussle")
-                    Text("Victory Lap")
+                    Text(artistName)
+                    Text(albumName)
                 }
             }
         }
@@ -169,7 +168,7 @@ class MainActivity : ComponentActivity() {
         localSpotifyDead: Boolean
     ) {
         val textFieldQuery = remember { mutableStateOf("") }
-        val foundStuff = remember { mutableListOf("") }
+        val foundStuff = remember { mutableListOf<Triple<String, String, String>>() }
         val isLoading = remember { mutableStateOf(false) }
 
         LaunchedEffect(textFieldQuery.value) {
@@ -183,9 +182,18 @@ class MainActivity : ComponentActivity() {
 
                 // Just for testing.. teehee!
                 if (result?.albums != null && result.albums?.size !!> 0) {
-                    val firstAlbum = result.albums?.get(0)?.artists?.get(0)?.name + " - " +
-                            result.albums?.get(0)?.name
-                    foundStuff.addAll(listOf(firstAlbum))
+                    val albumsList: ArrayList<Triple<String, String, String>> = arrayListOf()
+
+                    for (i in 0 until minOf(3, result.albums!!.size)) {
+                        val album = result.albums!![i]
+                        val artistName = album.artists[0].name
+                        val albumName = album.name
+                        val image = album.images[0].url
+
+                        albumsList.add(Triple(artistName, albumName, image))
+                    }
+
+                    foundStuff.addAll(albumsList)
                 }
 
                 isLoading.value = false
@@ -223,14 +231,20 @@ class MainActivity : ComponentActivity() {
                         CircularProgressIndicator() // Show that it's visibly fetching results
                     }
                     foundStuff.isNotEmpty() -> {
-                        Text(foundStuff[0]) // Else, show the result.
+                        // Else, show the result.
+                        for (infoTuple in foundStuff) {
+                            val (artistName, albumName, link) = infoTuple
+                            SpotifyCard(
+                                artistName = artistName,
+                                albumName = albumName,
+                                link = link
+                            )
+                        }
                     }
                     else -> {
                         Text("No results found.") // Terrible search.
                     }
                 }
-
-                SpotifyCard()
             }
         }
     }
