@@ -97,4 +97,9 @@ dependencies {
 
     //noinspection UseTomlInstead
     releaseImplementation("com.facebook.flipper:flipper-noop:0.211.1")
+
+    // AsyncImage stuff
+
+    //noinspection UseTomlInstead
+    implementation("io.coil-kt:coil-compose:2.4.0")
 }

@@ -4,10 +4,15 @@ import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Text
@@ -18,8 +23,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.lifecycleScope
+import coil.compose.AsyncImage
 import com.adamratzman.spotify.SpotifyAppApi
 import com.adamratzman.spotify.endpoints.pub.SearchApi
 import com.adamratzman.spotify.models.SpotifySearchResult
@@ -43,7 +50,12 @@ class MainActivity : ComponentActivity() {
     private val clientSecret = "58f5caf8a73b439689b108824daf4c79"
     private val redirectUri = "com.asadshamsiev.spotifyexplorationapplication://callback"
     private var spotifyAppRemote: SpotifyAppRemote? = null
-    private lateinit var publicSpotifyAppApi: SpotifyAppApi
+    private var publicSpotifyAppApi: SpotifyAppApi? = null
+
+    // We'll use this to tell if the local Spotify (1) thing (SpotifyAppRemote) doesn't work.
+    private var localSpotifyDead = false
+    // This'll be for the search stuff (2).
+    private var spotifyApiDead = false
 
     override fun onStart() {
         super.onStart()
@@ -63,6 +75,7 @@ class MainActivity : ComponentActivity() {
 
             override fun onFailure(throwable: Throwable) {
                 Log.e("SpotifyStuff", throwable.message, throwable)
+                localSpotifyDead = true
             }
         })
 
@@ -73,9 +86,14 @@ class MainActivity : ComponentActivity() {
     }
 
     private suspend fun buildSpotifyPublicApi() {
-        publicSpotifyAppApi = spotifyAppApi(clientId = clientId, clientSecret = clientSecret).build(
-            enableDefaultTokenRefreshProducerIfNoneExists = true
-        )
+        try {
+            publicSpotifyAppApi = spotifyAppApi(clientId = "boner", clientSecret = clientSecret).build(
+                enableDefaultTokenRefreshProducerIfNoneExists = true
+            )
+        } catch(e: Exception) {
+            Log.e("SpotifyApiError", "Failed to build Spotify public API", e)
+            spotifyApiDead = true
+        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -103,10 +121,10 @@ class MainActivity : ComponentActivity() {
     private suspend fun searchForResult(query: String): SpotifySearchResult? {
         var res: SpotifySearchResult? = null
 
-        if (::publicSpotifyAppApi.isInitialized) {
+        if (publicSpotifyAppApi != null) {
             // Otherwise, might block the main thread.
             res = withContext(Dispatchers.IO) {
-                publicSpotifyAppApi.search.search(
+                publicSpotifyAppApi!!.search.search(
                     query = query,
                     searchTypes = listOf(SearchApi.SearchType.Album).toTypedArray()
                 )
@@ -114,6 +132,30 @@ class MainActivity : ComponentActivity() {
         }
 
         return res
+    }
+
+    @Composable
+    fun SpotifyCard(
+        imageUrl: String = "https://encrypted-tbn2.gstatic.com/licensed-image?q=tbn:ANd9GcSzfok9XPsMj0PwBD8GcW17az4jVn_e5gi3JaO_F8NPiWEm-6l_k_kn276LKxYqaSiDfEd8MIdYCNBWaBQ",
+        modifier: Modifier = Modifier
+    ) {
+        Card(modifier = modifier) {
+            Row(
+                modifier = Modifier.padding(0.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                AsyncImage(
+                    model = imageUrl,
+                    contentDescription = null,
+                    modifier = Modifier.height(64.dp).width(64.dp)
+                )
+                Column {
+                    Text("Nipsey Hussle")
+                    Text("Victory Lap")
+                }
+            }
+        }
+
     }
 
     @Composable
@@ -163,7 +205,7 @@ class MainActivity : ComponentActivity() {
 
             when {
                 textFieldQuery.value.isEmpty() -> {
-                    Text("Type something you pagan") // When nothing's been typed yet.
+                    Text("Type something you pagan. GOATERed.") // When nothing's been typed yet.
                 }
                 isLoading.value -> {
                     CircularProgressIndicator() // Show that it's visibly fetching results
@@ -175,6 +217,8 @@ class MainActivity : ComponentActivity() {
                     Text("No results found.") // Terrible search.
                 }
             }
+
+            SpotifyCard()
         }
     }
 }
