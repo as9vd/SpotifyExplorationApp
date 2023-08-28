@@ -19,6 +19,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -53,15 +54,15 @@ class MainActivity : ComponentActivity() {
     private var publicSpotifyAppApi: SpotifyAppApi? = null
 
     // We'll use this to tell if the local Spotify (1) thing (SpotifyAppRemote) doesn't work.
-    private var localSpotifyDead = false
+    private var localSpotifyDead = mutableStateOf(false)
     // This'll be for the search stuff (2).
-    private var spotifyApiDead = false
+    private var spotifyApiDead = mutableStateOf(false)
 
     override fun onStart() {
         super.onStart()
 
         // Set the connection parameters.
-        val connectionParams = ConnectionParams.Builder(clientId)
+        val connectionParams = ConnectionParams.Builder("nonce")
             .setRedirectUri(redirectUri)
             .showAuthView(true)
             .build()
@@ -75,7 +76,7 @@ class MainActivity : ComponentActivity() {
 
             override fun onFailure(throwable: Throwable) {
                 Log.e("SpotifyStuff", throwable.message, throwable)
-                localSpotifyDead = true
+                localSpotifyDead.value = true
             }
         })
 
@@ -92,7 +93,7 @@ class MainActivity : ComponentActivity() {
             )
         } catch(e: Exception) {
             Log.e("SpotifyApiError", "Failed to build Spotify public API.", e)
-            spotifyApiDead = true
+            spotifyApiDead.value = true
         }
     }
 
@@ -113,7 +114,10 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             AppTheme {
-                MainScreen()
+                MainScreen(
+                    spotifyApiDead.value, 
+                    localSpotifyDead.value
+                )
             }
         }
     }
@@ -160,7 +164,10 @@ class MainActivity : ComponentActivity() {
 
     @Composable
     @OptIn(ExperimentalMaterial3Api::class)
-    fun MainScreen() {
+    fun MainScreen(
+        spotifyApiDead: Boolean,
+        localSpotifyDead: Boolean
+    ) {
         val textFieldQuery = remember { mutableStateOf("") }
         val foundStuff = remember { mutableListOf("") }
         val isLoading = remember { mutableStateOf(false) }
