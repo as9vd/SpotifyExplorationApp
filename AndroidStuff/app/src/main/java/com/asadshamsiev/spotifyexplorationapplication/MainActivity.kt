@@ -5,6 +5,7 @@ import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -13,7 +14,9 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -25,6 +28,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -57,6 +61,7 @@ class MainActivity : ComponentActivity() {
 
     // We'll use this to tell if the local Spotify (1) thing (SpotifyAppRemote) doesn't work.
     private var localSpotifyDead = mutableStateOf(false)
+
     // This'll be for the search stuff (2).
     private var spotifyApiDead = mutableStateOf(false)
 
@@ -90,10 +95,11 @@ class MainActivity : ComponentActivity() {
 
     private suspend fun buildSpotifyPublicApi() {
         try {
-            publicSpotifyAppApi = spotifyAppApi(clientId = clientId, clientSecret = clientSecret).build(
-                enableDefaultTokenRefreshProducerIfNoneExists = true
-            )
-        } catch(e: Exception) {
+            publicSpotifyAppApi =
+                spotifyAppApi(clientId = clientId, clientSecret = clientSecret).build(
+                    enableDefaultTokenRefreshProducerIfNoneExists = true
+                )
+        } catch (e: Exception) {
             Log.e("SpotifyApiError", "Failed to build Spotify public API.", e)
             spotifyApiDead.value = true
         }
@@ -149,26 +155,36 @@ class MainActivity : ComponentActivity() {
     ) {
         Card(
             border = BorderStroke(1.dp, Color.Black),
-            modifier = modifier.fillMaxWidth()
+            modifier = modifier.fillMaxWidth().padding(0.dp),
+            shape = RoundedCornerShape(0),
         ) {
             Row(
-                modifier = Modifier.padding(0.dp).height(80.dp).fillMaxWidth(),
+                modifier = Modifier
+                    .padding(0.dp)
+                    .height(80.dp)
+                    .fillMaxWidth()
+                    .padding(8.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Start
             ) {
                 AsyncImage(
                     model = link,
                     contentDescription = null,
-                    modifier = Modifier.width(64.dp).fillMaxHeight().weight(2f)
+                    modifier = Modifier
+                        .width(64.dp)
+                        // .fillMaxHeight()
+                        .border(
+                            width = 1.dp,
+                            color = Color.Black
+                        )
                 )
-                // Spacer(Modifier.width(8.dp))
+                Spacer(Modifier.size(16.dp))
                 Column {
-                    Text(artistName, Modifier.width(200.dp), fontSize = 16.sp)
-                    Text(albumName, Modifier.width(200.dp), fontSize = 14.sp)
+                    Text(artistName, Modifier.width(200.dp), fontSize = 16.sp, lineHeight = 12.sp)
+                    Text(albumName, Modifier.width(200.dp), fontSize = 12.sp, lineHeight = 12.sp)
                 }
             }
         }
-
     }
 
     @Composable
@@ -192,7 +208,7 @@ class MainActivity : ComponentActivity() {
                 foundStuff.clear()
 
                 // Just for testing.. teehee!
-                if (result?.albums != null && result.albums?.size !!> 0) {
+                if (result?.albums != null && result.albums?.size!! > 0) {
                     val albumsList: ArrayList<Triple<String, String, String>> = arrayListOf()
 
                     for (i in 0 until minOf(3, result.albums!!.size)) {
@@ -223,11 +239,11 @@ class MainActivity : ComponentActivity() {
             } else if (localSpotifyDead) {
                 Text("You haven't got Spotify installed on your phone.")
             } else {
-                Text("Start a Session")
+                Text("Start a Session 🐽☃\uFE0F")
                 TextField(
                     value = textFieldQuery.value,
                     placeholder = {
-                        Text("Click to start typing")
+                        Text("Click to start typing!")
                     },
                     onValueChange = {
                         textFieldQuery.value = it
@@ -236,11 +252,13 @@ class MainActivity : ComponentActivity() {
 
                 when {
                     textFieldQuery.value.isEmpty() -> {
-                        Text("Type something you pagan. GOATERed.") // When nothing's been typed yet.
+                        Text("Type something.") // When nothing's been typed yet.
                     }
+
                     isLoading.value -> {
                         CircularProgressIndicator() // Show that it's visibly fetching results
                     }
+
                     foundStuff.isNotEmpty() -> {
                         // Else, show the result.
                         for (infoTuple in foundStuff) {
@@ -252,6 +270,7 @@ class MainActivity : ComponentActivity() {
                             )
                         }
                     }
+
                     else -> {
                         Text("No results found.") // Terrible search.
                     }
