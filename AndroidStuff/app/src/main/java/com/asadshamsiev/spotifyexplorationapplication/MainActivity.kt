@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -29,7 +28,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -66,6 +64,12 @@ class MainActivity : ComponentActivity() {
     // This'll be for the search stuff (2).
     private var spotifyApiDead = mutableStateOf(false)
 
+    // This is what is used to check if music is currently playing, and if the track list should be shown.
+    private var musicPlaying = mutableStateOf(false)
+
+    private val trackName = mutableStateOf("")
+    private val albumName = mutableStateOf("")
+
     override fun onStart() {
         super.onStart()
 
@@ -78,8 +82,15 @@ class MainActivity : ComponentActivity() {
         // 1. Connect the Spotify connected to the local app on my phone.
         SpotifyAppRemote.connect(this, connectionParams, object : Connector.ConnectionListener {
             override fun onConnected(appRemote: SpotifyAppRemote) {
-                spotifyAppRemote = appRemote
                 Log.d("SpotifyStuff", "Connected! Finally.")
+                spotifyAppRemote = appRemote
+                spotifyAppRemote?.playerApi?.subscribeToPlayerState()?.setEventCallback { state ->
+                    run {
+                        musicPlaying.value = !state.isPaused
+                        trackName.value = state.track.name
+                        albumName.value = state.track.album.name
+                    }
+                }
             }
 
             override fun onFailure(throwable: Throwable) {
@@ -125,7 +136,9 @@ class MainActivity : ComponentActivity() {
             AppTheme {
                 MainScreen(
                     spotifyApiDead.value,
-                    localSpotifyDead.value
+                    localSpotifyDead.value,
+                    trackName.value,
+                    albumName.value
                 )
             }
         }
@@ -156,7 +169,9 @@ class MainActivity : ComponentActivity() {
     ) {
         Card(
             border = BorderStroke(1.dp, Color.Black),
-            modifier = modifier.fillMaxWidth().padding(0.dp),
+            modifier = modifier
+                .fillMaxWidth()
+                .padding(0.dp),
             shape = RoundedCornerShape(0),
         ) {
             Row(
@@ -192,7 +207,9 @@ class MainActivity : ComponentActivity() {
     @OptIn(ExperimentalMaterial3Api::class)
     fun MainScreen(
         spotifyApiDead: Boolean,
-        localSpotifyDead: Boolean
+        localSpotifyDead: Boolean,
+        currTrackName: String,
+        currAlbumName: String
     ) {
         val textFieldQuery = remember { mutableStateOf("") }
         val foundStuff = remember { mutableListOf<List<String>>() }
@@ -281,6 +298,11 @@ class MainActivity : ComponentActivity() {
                     else -> {
                         Text("No results found.") // Terrible search.
                     }
+                }
+
+                Column {
+                    Text(currAlbumName, fontSize = 8.sp)
+                    Text(currTrackName, fontSize = 8.sp)
                 }
             }
         }
