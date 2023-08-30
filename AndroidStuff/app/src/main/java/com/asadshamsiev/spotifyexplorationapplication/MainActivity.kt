@@ -6,6 +6,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -194,7 +195,7 @@ class MainActivity : ComponentActivity() {
         localSpotifyDead: Boolean
     ) {
         val textFieldQuery = remember { mutableStateOf("") }
-        val foundStuff = remember { mutableListOf<Triple<String, String, String>>() }
+        val foundStuff = remember { mutableListOf<List<String>>() }
         val isLoading = remember { mutableStateOf(false) }
 
         // Whenever the query gets updated.
@@ -209,15 +210,17 @@ class MainActivity : ComponentActivity() {
 
                 // Just for testing.. teehee!
                 if (result?.albums != null && result.albums?.size!! > 0) {
-                    val albumsList: ArrayList<Triple<String, String, String>> = arrayListOf()
+                    val albumsList: ArrayList<List<String>> = arrayListOf()
 
                     for (i in 0 until minOf(3, result.albums!!.size)) {
                         val album = result.albums!![i]
                         val artistName = album.artists[0].name
                         val albumName = album.name
                         val image = album.images[0].url
+                        val uri = album.uri.uri
 
-                        albumsList.add(Triple(artistName, albumName, image))
+                        // .uri is good. Returns AlbumUri/SpotifyUri.
+                        albumsList.add(listOf(artistName, albumName, image, uri))
                     }
 
                     foundStuff.addAll(albumsList)
@@ -262,11 +265,15 @@ class MainActivity : ComponentActivity() {
                     foundStuff.isNotEmpty() -> {
                         // Else, show the result.
                         for (infoTuple in foundStuff) {
-                            val (artistName, albumName, link) = infoTuple
+                            val (artistName, albumName, link, uri) = infoTuple
+
                             SpotifyCard(
                                 artistName = artistName,
                                 albumName = albumName,
-                                link = link
+                                link = link,
+                                modifier = Modifier.clickable {
+                                    spotifyAppRemote?.playerApi?.play(uri)
+                                }
                             )
                         }
                     }
