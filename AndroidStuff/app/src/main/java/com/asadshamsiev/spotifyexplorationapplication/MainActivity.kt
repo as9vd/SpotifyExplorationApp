@@ -26,6 +26,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -48,6 +49,8 @@ import com.spotify.android.appremote.api.Connector
 import com.spotify.android.appremote.api.SpotifyAppRemote
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -67,8 +70,8 @@ class MainActivity : ComponentActivity() {
     // This is what is used to check if music is currently playing, and if the track list should be shown.
     private var musicPlaying = mutableStateOf(false)
 
-    private val trackName = mutableStateOf("")
-    private val albumName = mutableStateOf("")
+    private val trackUri = mutableStateOf("")
+    private val albumUri = mutableStateOf("")
 
     override fun onStart() {
         super.onStart()
@@ -87,8 +90,8 @@ class MainActivity : ComponentActivity() {
                 spotifyAppRemote?.playerApi?.subscribeToPlayerState()?.setEventCallback { state ->
                     run {
                         musicPlaying.value = !state.isPaused
-                        trackName.value = state.track.name
-                        albumName.value = state.track.album.name
+                        trackUri.value = state.track.uri
+                        albumUri.value = state.track.album.uri
                     }
                 }
             }
@@ -102,6 +105,22 @@ class MainActivity : ComponentActivity() {
         // 2. Connect the Spotify API that'll call the public search shit.
         lifecycleScope.launch {
             buildSpotifyPublicApi()
+        }
+
+        lifecycleScope.launch {
+            snapshotFlow { albumUri.value }.distinctUntilChanged().collect {
+                Log.d("Name Changed", "NAME CHANGED YOU PAGAN!")
+                try {
+                    val album = publicSpotifyAppApi?.albums?.getAlbum(albumUri.value)
+                    if (album?.tracks != null) {
+                        for (track in album.tracks) {
+                            Log.d("Track", track.name)
+                        }
+                    }
+                } catch (e: Exception) {
+                    Log.d("Error", "Failed to get album tracks.")
+                }
+            }
         }
     }
 
@@ -137,8 +156,8 @@ class MainActivity : ComponentActivity() {
                 MainScreen(
                     spotifyApiDead.value,
                     localSpotifyDead.value,
-                    trackName.value,
-                    albumName.value
+                    trackUri.value,
+                    albumUri.value
                 )
             }
         }
