@@ -7,6 +7,7 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -16,7 +17,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -36,6 +39,7 @@ import androidx.lifecycle.lifecycleScope
 import coil.compose.AsyncImage
 import com.adamratzman.spotify.SpotifyAppApi
 import com.adamratzman.spotify.endpoints.pub.SearchApi
+import com.adamratzman.spotify.models.SimpleTrack
 import com.adamratzman.spotify.models.SpotifySearchResult
 import com.adamratzman.spotify.models.Track
 import com.adamratzman.spotify.spotifyAppApi
@@ -181,6 +185,13 @@ class MainActivity : ComponentActivity() {
         return res
     }
 
+    fun msToDuration(ms: Int): String {
+        val totalSeconds = ms / 1000
+        val minutes = totalSeconds / 60
+        val seconds = totalSeconds % 60
+        return "%d:%02d".format(minutes, seconds)
+    }
+
     @Composable
     fun SpotifyCard(
         artistName: String,
@@ -236,6 +247,7 @@ class MainActivity : ComponentActivity() {
         val textFieldQuery = remember { mutableStateOf("") }
         val foundStuff = remember { mutableListOf<List<String>>() }
         val isLoading = remember { mutableStateOf(false) }
+        val scrollState = rememberScrollState()
 
         // Whenever the query gets updated.
         LaunchedEffect(textFieldQuery.value) {
@@ -272,7 +284,8 @@ class MainActivity : ComponentActivity() {
         Column(
             modifier = Modifier
                 .padding(all = 16.dp)
-                .fillMaxWidth(),
+                .fillMaxWidth()
+                .verticalScroll(scrollState),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
@@ -323,13 +336,25 @@ class MainActivity : ComponentActivity() {
                 }
 
                 Column {
-                    Text(currAlbumName, fontSize = 8.sp)
-                    Text(currTrackName, fontSize = 8.sp)
+                    Text(currAlbumName, fontSize = 12.sp)
+                    Text(currTrackName, fontSize = 12.sp)
 
                     // Something's not right here.
-                    for (track in currentAlbumTracks) {
-                        if (track is Track) {
-                            Text(track.name)
+                    if (currentAlbumTracks.size == 1 && currentAlbumTracks[0] is List<*>) {
+                        for (track in (currentAlbumTracks[0] as List<*>)) {
+                            if (track is SimpleTrack) {
+                                Card(
+                                    border = BorderStroke(1.dp, Color.Black),
+                                    shape = RoundedCornerShape(0), modifier = Modifier
+                                        .clickable {
+                                            spotifyAppRemote?.playerApi?.play(track.uri.uri)
+                                        }
+                                        .fillMaxWidth()
+                                        .padding(0.dp)
+                                ) {
+                                    Text("${track.trackNumber}. ${track.name} (${msToDuration(track.length)})")
+                                }
+                            }
                         }
                     }
                 }
