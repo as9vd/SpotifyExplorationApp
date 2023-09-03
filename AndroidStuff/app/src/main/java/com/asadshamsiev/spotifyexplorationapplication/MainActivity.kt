@@ -37,6 +37,7 @@ import coil.compose.AsyncImage
 import com.adamratzman.spotify.SpotifyAppApi
 import com.adamratzman.spotify.endpoints.pub.SearchApi
 import com.adamratzman.spotify.models.SpotifySearchResult
+import com.adamratzman.spotify.models.Track
 import com.adamratzman.spotify.spotifyAppApi
 import com.asadshamsiev.spotifyexplorationapplication.ui.theme.AppTheme
 import com.facebook.flipper.android.AndroidFlipperClient
@@ -49,7 +50,6 @@ import com.spotify.android.appremote.api.Connector
 import com.spotify.android.appremote.api.SpotifyAppRemote
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -72,6 +72,8 @@ class MainActivity : ComponentActivity() {
 
     private val trackUri = mutableStateOf("")
     private val albumUri = mutableStateOf("")
+
+    private val currentAlbumTracks = mutableStateOf(arrayListOf<Any>())
 
     override fun onStart() {
         super.onStart()
@@ -113,9 +115,8 @@ class MainActivity : ComponentActivity() {
                 try {
                     val album = publicSpotifyAppApi?.albums?.getAlbum(albumUri.value)
                     if (album?.tracks != null) {
-                        for (track in album.tracks) {
-                            Log.d("Track", track.name)
-                        }
+                        currentAlbumTracks.value.clear()
+                        currentAlbumTracks.value.addAll(listOf(album.tracks))
                     }
                 } catch (e: Exception) {
                     Log.d("Error", "Failed to get album tracks.")
@@ -157,7 +158,8 @@ class MainActivity : ComponentActivity() {
                     spotifyApiDead.value,
                     localSpotifyDead.value,
                     trackUri.value,
-                    albumUri.value
+                    albumUri.value,
+                    currentAlbumTracks.value
                 )
             }
         }
@@ -228,7 +230,8 @@ class MainActivity : ComponentActivity() {
         spotifyApiDead: Boolean,
         localSpotifyDead: Boolean,
         currTrackName: String,
-        currAlbumName: String
+        currAlbumName: String,
+        currentAlbumTracks: MutableList<Any>
     ) {
         val textFieldQuery = remember { mutableStateOf("") }
         val foundStuff = remember { mutableListOf<List<String>>() }
@@ -322,6 +325,13 @@ class MainActivity : ComponentActivity() {
                 Column {
                     Text(currAlbumName, fontSize = 8.sp)
                     Text(currTrackName, fontSize = 8.sp)
+
+                    // Something's not right here.
+                    for (track in currentAlbumTracks) {
+                        if (track is Track) {
+                            Text(track.name)
+                        }
+                    }
                 }
             }
         }
