@@ -335,7 +335,7 @@ class MainActivity : ComponentActivity() {
                 foundStuff = foundStuff
             )
 
-            // These are the tracks for the currently playing song.
+            // This will show the track list of the album of the currently played song.
             TrackListCards(
                 spotifyAppRemote = spotifyAppRemote,
                 currTrackName = currTrackName,

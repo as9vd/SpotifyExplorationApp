@@ -1,11 +1,19 @@
 package com.asadshamsiev.spotifyexplorationapplication
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -14,6 +22,11 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -22,6 +35,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.adamratzman.spotify.models.SimpleTrack
 import com.spotify.android.appremote.api.SpotifyAppRemote
+import kotlinx.coroutines.delay
 
 @Composable
 fun TrackCard(spotifyAppRemote: SpotifyAppRemote? = null, track: SimpleTrack) {
@@ -40,7 +54,7 @@ fun TrackCard(spotifyAppRemote: SpotifyAppRemote? = null, track: SimpleTrack) {
                         track.length
                     )
                 })",
-                textAlign = TextAlign.Center,
+                // textAlign = TextAlign.Center,
                 modifier = Modifier.padding(4.dp)
             )
         }
@@ -52,10 +66,30 @@ fun TrackListCards(
     spotifyAppRemote: SpotifyAppRemote? = null,
     currTrackName: String,
     currAlbumName: String,
-    currentAlbumTracks: MutableList<Any>
+    currentAlbumTracks: List<Any>
 ) {
-    // If the shit isn't init.
-    val tracksInit = currentAlbumTracks.size > 0
+    val tracksInit = currentAlbumTracks.isNotEmpty()
+
+    // Initialize the list as not visible.
+    val listVisible = remember { mutableStateOf(false) }
+
+    // Track the previous album tracks to detect changes.
+    val previousAlbumTracks = rememberUpdatedState(currentAlbumTracks)
+
+    LaunchedEffect(Unit) {
+        // On initial composition, show the list after a short delay.
+        delay(100)
+        listVisible.value = true
+    }
+
+    LaunchedEffect(currentAlbumTracks) {
+        if (previousAlbumTracks != currentAlbumTracks) {
+            listVisible.value = false
+            delay(300) // Match the exit animation duration.
+            listVisible.value = true
+        }
+    }
+
     if (currTrackName != "Track: " && tracksInit) {
         Column {
             Text(currAlbumName, fontSize = 12.sp)
@@ -63,14 +97,25 @@ fun TrackListCards(
 
             Spacer(modifier = Modifier.size(8.dp))
 
-            // Something's not right here.
-            if (currentAlbumTracks.size == 1 && currentAlbumTracks[0] is List<*>) {
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(2.5.dp)
-                ) {
-                    for (track in (currentAlbumTracks[0] as List<*>)) {
-                        if (track is SimpleTrack) {
-                            TrackCard(spotifyAppRemote = spotifyAppRemote, track = track)
+            AnimatedVisibility(
+                visible = listVisible.value,
+                enter = slideInVertically(
+                    initialOffsetY = { fullHeight -> fullHeight },
+                    animationSpec = tween(300)
+                ),
+                exit = slideOutVertically(
+                    targetOffsetY = { fullHeight -> fullHeight },
+                    animationSpec = tween(300)
+                )
+            ) {
+                if (currentAlbumTracks.size == 1 && currentAlbumTracks[0] is List<*> && listVisible.value) {
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(2.5.dp)
+                    ) {
+                        for (track in (currentAlbumTracks[0] as List<*>)) {
+                            if (track is SimpleTrack) {
+                                TrackCard(spotifyAppRemote = spotifyAppRemote, track = track)
+                            }
                         }
                     }
                 }
@@ -78,7 +123,7 @@ fun TrackListCards(
         }
     } else {
         CircularProgressIndicator()
-        Text("Shit is loading, give it a second!")
+        Text("Data is loading, give it a second!")
     }
 }
 
