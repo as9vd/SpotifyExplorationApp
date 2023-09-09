@@ -6,6 +6,7 @@ import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -23,6 +24,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.lifecycleScope
 import com.adamratzman.spotify.SpotifyAppApi
@@ -231,6 +234,8 @@ class MainActivity : ComponentActivity() {
         isLoading: MutableState<Boolean>,
         foundStuff: MutableList<List<String>>
     ) {
+        var scale = remember { mutableStateOf(1f) }
+
         when {
             textFieldQuery.value.isEmpty() -> {
                 Text("Type something.") // When nothing's been typed yet.
@@ -249,9 +254,7 @@ class MainActivity : ComponentActivity() {
                         artistName = artistName,
                         albumName = albumName,
                         link = link,
-                        modifier = Modifier.clickable {
-                            spotifyAppRemote?.playerApi?.play(uri)
-                        }
+                        onClick = {spotifyAppRemote?.playerApi?.play(uri)}
                     )
                 }
             }
