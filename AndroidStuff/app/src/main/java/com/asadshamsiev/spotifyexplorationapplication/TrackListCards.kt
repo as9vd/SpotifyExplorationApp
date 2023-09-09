@@ -1,19 +1,12 @@
 package com.asadshamsiev.spotifyexplorationapplication
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.Crossfade
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
+import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -22,28 +15,26 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.adamratzman.spotify.models.SimpleTrack
 import com.spotify.android.appremote.api.SpotifyAppRemote
-import kotlinx.coroutines.delay
+import kotlin.random.Random
 
 @Composable
 fun TrackCard(spotifyAppRemote: SpotifyAppRemote? = null, track: SimpleTrack) {
+    val context = LocalContext.current
     Card(
         border = BorderStroke(1.5.dp, Color.Black),
         shape = RoundedCornerShape(0), modifier = Modifier
             .clickable {
                 spotifyAppRemote?.playerApi?.play(track.uri.uri)
+                Toast.makeText(context, sampleSong(track.length), Toast.LENGTH_SHORT).show()
             }
             .fillMaxWidth()
     ) {
@@ -96,9 +87,48 @@ fun TrackListCards(
     }
 }
 
+data class Period(val start: Int, val end: Int) {
+    val length: Int get() = end - start
+}
+
 private fun msToDuration(ms: Int): String {
     val totalSeconds = ms / 1000
     val minutes = totalSeconds / 60
     val seconds = totalSeconds % 60
     return "%d:%02d".format(minutes, seconds)
+}
+
+fun sampleSong(totalLengthMillis: Int): String {
+    val targetLength = (totalLengthMillis * 0.51).toInt()
+    val numPeriods = Random.nextInt(4, 8)
+
+    val periods = mutableListOf<Period>()
+
+    var currentLength = 0
+    var lastEnd = 0
+
+    for (i in 0 until numPeriods - 1) {
+        val remainingPeriods = numPeriods - periods.size
+        val remainingLength = targetLength - currentLength
+        val averageRemainingLength = remainingLength / remainingPeriods
+
+        val maxStart = totalLengthMillis - averageRemainingLength - (remainingPeriods - 1) * averageRemainingLength
+        val start = Random.nextInt(lastEnd, maxStart.coerceAtLeast(lastEnd))
+        val end = start + averageRemainingLength
+
+        periods.add(Period(start, end))
+        currentLength += averageRemainingLength
+        lastEnd = end
+    }
+
+    // Adjust last period to match target length
+    val lastPeriodStart = Random.nextInt(lastEnd, totalLengthMillis - (targetLength - currentLength))
+    periods.add(Period(lastPeriodStart, lastPeriodStart + (targetLength - currentLength)))
+
+    var return_val: String = ""
+    periods.forEach { period ->
+        return_val += "${msToDuration(period.start)} - ${msToDuration(period.end)} "
+    }
+
+    return return_val
 }

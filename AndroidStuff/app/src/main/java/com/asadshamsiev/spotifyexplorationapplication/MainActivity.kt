@@ -5,9 +5,18 @@ import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.animation.core.AnimationEndReason
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearOutSlowInEasing
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.keyframes
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.updateTransition
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.*
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -20,10 +29,15 @@ import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
@@ -234,8 +248,6 @@ class MainActivity : ComponentActivity() {
         isLoading: MutableState<Boolean>,
         foundStuff: MutableList<List<String>>
     ) {
-        var scale = remember { mutableStateOf(1f) }
-
         when {
             textFieldQuery.value.isEmpty() -> {
                 Text("Type something.") // When nothing's been typed yet.
@@ -254,7 +266,7 @@ class MainActivity : ComponentActivity() {
                         artistName = artistName,
                         albumName = albumName,
                         link = link,
-                        onClick = {spotifyAppRemote?.playerApi?.play(uri)}
+                        onClick = { spotifyAppRemote?.playerApi?.play(uri) }
                     )
                 }
             }
@@ -342,6 +354,8 @@ class MainActivity : ComponentActivity() {
                     currAlbumName = currAlbumName,
                     currentAlbumTracks = currentAlbumTracks!!
                 )
+
+                Text("HERE is where the duration stuff would show")
             }
         }
     }

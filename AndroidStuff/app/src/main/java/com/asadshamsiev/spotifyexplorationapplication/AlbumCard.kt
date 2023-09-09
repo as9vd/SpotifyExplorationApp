@@ -45,7 +45,7 @@ fun AlbumCard(
     val targetScale = remember { mutableStateOf(1f) }
     val scale: Float by animateFloatAsState(
         targetValue = targetScale.value,
-        animationSpec = tween(durationMillis = 150, easing = FastOutSlowInEasing),
+        animationSpec = tween(durationMillis = 175, easing = FastOutSlowInEasing),
         label = "Shrink Album Card"
     )
 
@@ -61,7 +61,7 @@ fun AlbumCard(
             .pointerInput(Unit) {
                 detectTapGestures(
                     onPress = {
-                        targetScale.value = 0.95f
+                        targetScale.value = 0.925f
                         // Capture the gesture until it's released.
                         val success = tryAwaitRelease()
                         // When released, scale back up to original size.
