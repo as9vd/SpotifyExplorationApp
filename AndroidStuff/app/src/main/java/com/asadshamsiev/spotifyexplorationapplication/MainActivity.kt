@@ -28,6 +28,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.snapshotFlow
@@ -124,12 +126,13 @@ class MainActivity : ComponentActivity() {
 
         lifecycleScope.launch {
             snapshotFlow { albumUri.value }.distinctUntilChanged().collect {
-                currentAlbumTracks.value.clear()
                 Log.d("Name Changed", "NAME CHANGED YOU PAGAN!")
                 try {
                     val album = publicSpotifyAppApi?.albums?.getAlbum(albumUri.value)
                     if (album?.tracks != null) {
-                        currentAlbumTracks.value.addAll(listOf(album.tracks))
+                        val updatedAlbumTracks = arrayListOf<Any>()
+                        updatedAlbumTracks.addAll(listOf(album.tracks))
+                        currentAlbumTracks.value = updatedAlbumTracks
                     }
                 } catch (e: Exception) {
                     Log.d("Error", "Failed to get album tracks.")
@@ -345,7 +348,7 @@ class MainActivity : ComponentActivity() {
                 }
 
                 // If the shit isn't init.
-                val tracksInit = (currentAlbumTracks.size > 0)
+                val tracksInit = (currentAlbumTracks != null) && (currentAlbumTracks?.size!! > 0)
                 if (currTrackName != "Track: " && tracksInit) {
                     Column {
                         Text(currAlbumName, fontSize = 12.sp)
@@ -354,7 +357,7 @@ class MainActivity : ComponentActivity() {
                         Spacer(modifier = Modifier.size(8.dp))
 
                         // Something's not right here.
-                        if (currentAlbumTracks.size == 1 && currentAlbumTracks[0] is List<*>) {
+                        if (currentAlbumTracks!!.size == 1 && currentAlbumTracks[0] is List<*>) {
                             Column(
                                 verticalArrangement = Arrangement.spacedBy(2.5.dp)
                             ) {
