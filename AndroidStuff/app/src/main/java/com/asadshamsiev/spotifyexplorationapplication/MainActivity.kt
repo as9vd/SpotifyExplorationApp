@@ -66,6 +66,9 @@ const val clientSecret = "58f5caf8a73b439689b108824daf4c79"
 const val redirectUri = "com.asadshamsiev.spotifyexplorationapplication://callback"
 
 class MainActivity : ComponentActivity() {
+    // Stuff used for parsing the length in ms.
+    private val trackUtils: TrackUtils = TrackUtils()
+
     private var spotifyAppRemote: SpotifyAppRemote? = null
     private var publicSpotifyAppApi: SpotifyAppApi? = null
 
@@ -131,7 +134,15 @@ class MainActivity : ComponentActivity() {
                                         publicSpotifyAppApi?.albums?.getAlbum(albumUri.value)
                                     if (album?.tracks != null) {
                                         val updatedAlbumTracks = arrayListOf<Any>()
-                                        updatedAlbumTracks.addAll(listOf(album.tracks))
+
+                                        // Seems to be the first index always.. might come back and
+                                        // bite me in the arse later.
+                                        for (track in album.tracks) {
+                                            val trackLength: Int = track.length
+                                            updatedAlbumTracks.add(Pair(trackUtils.sampleSong(trackLength), track))
+                                        }
+
+                                        // updatedAlbumTracks.addAll(listOf(album.tracks))
                                         currentAlbumTracks.value = updatedAlbumTracks
                                         combinedSpotifyState.value =
                                             SpotifyState(
