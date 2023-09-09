@@ -9,6 +9,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -33,6 +34,7 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.lifecycleScope
@@ -75,7 +77,10 @@ class MainActivity : ComponentActivity() {
     private var musicPlaying = mutableStateOf(false)
 
     private val trackUri = mutableStateOf("")
+    private val trackName = mutableStateOf("")
+
     private val albumUri = mutableStateOf("")
+    private val albumName = mutableStateOf("")
 
     private val currentAlbumTracks = mutableStateOf(arrayListOf<Any>())
 
@@ -96,8 +101,12 @@ class MainActivity : ComponentActivity() {
                 spotifyAppRemote?.playerApi?.subscribeToPlayerState()?.setEventCallback { state ->
                     run {
                         musicPlaying.value = !state.isPaused
+
                         trackUri.value = state.track.uri
+                        trackName.value = state.track.name
+
                         albumUri.value = state.track.album.uri
+                        albumName.value = state.track.album.name
                     }
                 }
             }
@@ -161,8 +170,8 @@ class MainActivity : ComponentActivity() {
                 MainScreen(
                     spotifyApiDead.value,
                     localSpotifyDead.value,
-                    trackUri.value,
-                    albumUri.value,
+                    "Track: ${trackName.value}",
+                    "Album: ${albumName.value}",
                     currentAlbumTracks.value
                 )
             }
@@ -339,20 +348,35 @@ class MainActivity : ComponentActivity() {
                     Text(currAlbumName, fontSize = 12.sp)
                     Text(currTrackName, fontSize = 12.sp)
 
+                    Spacer(modifier = Modifier.size(8.dp))
+
                     // Something's not right here.
                     if (currentAlbumTracks.size == 1 && currentAlbumTracks[0] is List<*>) {
-                        for (track in (currentAlbumTracks[0] as List<*>)) {
-                            if (track is SimpleTrack) {
-                                Card(
-                                    border = BorderStroke(1.dp, Color.Black),
-                                    shape = RoundedCornerShape(0), modifier = Modifier
-                                        .clickable {
-                                            spotifyAppRemote?.playerApi?.play(track.uri.uri)
+                        Column(
+                            verticalArrangement = Arrangement.spacedBy(2.5.dp)
+                        ) {
+                            for (track in (currentAlbumTracks[0] as List<*>)) {
+                                if (track is SimpleTrack) {
+                                    Card(
+                                        border = BorderStroke(1.5.dp, Color.Black),
+                                        shape = RoundedCornerShape(0), modifier = Modifier
+                                            .clickable {
+                                                spotifyAppRemote?.playerApi?.play(track.uri.uri)
+                                            }
+                                            .fillMaxWidth()
+                                    ) {
+                                        Box(contentAlignment = Alignment.Center) {
+                                            Text(
+                                                "${track.trackNumber}. ${track.name} (${
+                                                    msToDuration(
+                                                        track.length
+                                                    )
+                                                })",
+                                                textAlign = TextAlign.Center,
+                                                modifier = Modifier.padding(4.dp)
+                                            )
                                         }
-                                        .fillMaxWidth()
-                                        .padding(0.dp)
-                                ) {
-                                    Text("${track.trackNumber}. ${track.name} (${msToDuration(track.length)})")
+                                    }
                                 }
                             }
                         }
