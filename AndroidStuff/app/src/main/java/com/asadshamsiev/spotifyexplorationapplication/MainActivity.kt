@@ -1,5 +1,6 @@
 package com.asadshamsiev.spotifyexplorationapplication
 
+import android.annotation.SuppressLint
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
@@ -28,6 +29,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -62,10 +64,12 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
+const val UNINIT_STR = ""
+const val clientId = "d6d33d89d3a044618291f268d1eea409"
+const val clientSecret = "58f5caf8a73b439689b108824daf4c79"
+const val redirectUri = "com.asadshamsiev.spotifyexplorationapplication://callback"
+
 class MainActivity : ComponentActivity() {
-    private val clientId = "d6d33d89d3a044618291f268d1eea409"
-    private val clientSecret = "58f5caf8a73b439689b108824daf4c79"
-    private val redirectUri = "com.asadshamsiev.spotifyexplorationapplication://callback"
     private var spotifyAppRemote: SpotifyAppRemote? = null
     private var publicSpotifyAppApi: SpotifyAppApi? = null
 
@@ -75,15 +79,18 @@ class MainActivity : ComponentActivity() {
     // This'll be for the search stuff (2).
     private var spotifyApiDead = mutableStateOf(false)
 
+    private var failedToGetTracks = mutableStateOf(false)
+
     // This is what is used to check if music is currently playing, and if the track list should be shown.
     private var musicPlaying = mutableStateOf(false)
 
-    private val trackUri = mutableStateOf("")
-    private val trackName = mutableStateOf("")
+    private val trackUri = mutableStateOf(UNINIT_STR)
+    private val trackName = mutableStateOf(UNINIT_STR)
 
-    private val albumUri = mutableStateOf("")
-    private val albumName = mutableStateOf("")
+    private val albumUri = mutableStateOf(UNINIT_STR)
+    private val albumName = mutableStateOf(UNINIT_STR)
 
+    @SuppressLint("MutableCollectionMutableState")
     private val currentAlbumTracks = mutableStateOf(arrayListOf<Any>())
 
     override fun onStart() {
@@ -133,9 +140,11 @@ class MainActivity : ComponentActivity() {
                         val updatedAlbumTracks = arrayListOf<Any>()
                         updatedAlbumTracks.addAll(listOf(album.tracks))
                         currentAlbumTracks.value = updatedAlbumTracks
+                        failedToGetTracks.value = false
                     }
                 } catch (e: Exception) {
                     Log.d("Error", "Failed to get album tracks.")
+                    failedToGetTracks.value = true
                 }
             }
         }
@@ -156,6 +165,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        // Connect flipper.
         if (BuildConfig.DEBUG && FlipperUtils.shouldEnableFlipper(this)) {
             SoLoader.init(this, false)
             val client = AndroidFlipperClient.getInstance(this)
@@ -197,58 +207,68 @@ class MainActivity : ComponentActivity() {
         return res
     }
 
-    fun msToDuration(ms: Int): String {
-        val totalSeconds = ms / 1000
-        val minutes = totalSeconds / 60
-        val seconds = totalSeconds % 60
-        return "%d:%02d".format(minutes, seconds)
+    @Composable
+    fun SearchConditionalErrors(spotifyApiDead: Boolean, localSpotifyDead: Boolean) {
+        if (spotifyApiDead) {
+            Text("Spotify cannot authenticate your account.")
+        } else if (localSpotifyDead) {
+            Text("You haven't got Spotify installed on your phone.")
+        }
+    }
+
+    @OptIn(ExperimentalMaterial3Api::class)
+    @Composable
+    fun SearchBox(textFieldQuery: MutableState<String>) {
+        Text("Start a Session 🐽☃\uFE0F")
+        TextField(
+            value = textFieldQuery.value,
+            placeholder = {
+                Text("Click to start typing!")
+            },
+            onValueChange = {
+                textFieldQuery.value = it
+            }
+        )
     }
 
     @Composable
-    fun SpotifyCard(
-        artistName: String,
-        albumName: String,
-        link: String, // These'll eventually need defaults for if it craps out.
-        modifier: Modifier = Modifier
+    fun AlbumCardResults(
+        textFieldQuery: MutableState<String>,
+        isLoading: MutableState<Boolean>,
+        foundStuff: MutableList<List<String>>
     ) {
-        Card(
-            border = BorderStroke(1.dp, Color.Black),
-            modifier = modifier
-                .fillMaxWidth()
-                .padding(0.dp),
-            shape = RoundedCornerShape(0),
-        ) {
-            Row(
-                modifier = Modifier
-                    .padding(0.dp)
-                    .height(80.dp)
-                    .fillMaxWidth()
-                    .padding(8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Start
-            ) {
-                AsyncImage(
-                    model = link,
-                    contentDescription = null,
-                    modifier = Modifier
-                        .width(64.dp)
-                        // .fillMaxHeight()
-                        .border(
-                            width = 1.dp,
-                            color = Color.Black
-                        )
-                )
-                Spacer(Modifier.size(16.dp))
-                Column {
-                    Text(artistName, Modifier.width(200.dp), fontSize = 16.sp, lineHeight = 12.sp)
-                    Text(albumName, Modifier.width(200.dp), fontSize = 12.sp, lineHeight = 12.sp)
+        when {
+            textFieldQuery.value.isEmpty() -> {
+                Text("Type something.") // When nothing's been typed yet.
+            }
+
+            isLoading.value -> {
+                CircularProgressIndicator() // Show that it's visibly fetching results
+            }
+
+            foundStuff.isNotEmpty() -> {
+                // Else, show the result.
+                for (infoTuple in foundStuff) {
+                    val (artistName, albumName, link, uri) = infoTuple
+
+                    AlbumCard(
+                        artistName = artistName,
+                        albumName = albumName,
+                        link = link,
+                        modifier = Modifier.clickable {
+                            spotifyAppRemote?.playerApi?.play(uri)
+                        }
+                    )
                 }
+            }
+
+            else -> {
+                Text("No results found.") // Terrible search.
             }
         }
     }
 
     @Composable
-    @OptIn(ExperimentalMaterial3Api::class)
     fun MainScreen(
         spotifyApiDead: Boolean,
         localSpotifyDead: Boolean,
@@ -256,7 +276,7 @@ class MainActivity : ComponentActivity() {
         currAlbumName: String,
         currentAlbumTracks: MutableList<Any>
     ) {
-        val textFieldQuery = remember { mutableStateOf("") }
+        val textFieldQuery = remember { mutableStateOf(UNINIT_STR) }
         val foundStuff = remember { mutableListOf<List<String>>() }
         val isLoading = remember { mutableStateOf(false) }
         val scrollState = rememberScrollState()
@@ -301,98 +321,27 @@ class MainActivity : ComponentActivity() {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            if (spotifyApiDead) {
-                Text("Spotify cannot authenticate your account.")
-            } else if (localSpotifyDead) {
-                Text("You haven't got Spotify installed on your phone.")
-            } else {
-                Text("Start a Session 🐽☃\uFE0F")
-                TextField(
-                    value = textFieldQuery.value,
-                    placeholder = {
-                        Text("Click to start typing!")
-                    },
-                    onValueChange = {
-                        textFieldQuery.value = it
-                    }
-                )
+            // These errors only show when the 1. local phone API is dead or 2. the public API is dead.
+            SearchConditionalErrors(
+                spotifyApiDead = spotifyApiDead,
+                localSpotifyDead = localSpotifyDead
+            )
 
-                when {
-                    textFieldQuery.value.isEmpty() -> {
-                        Text("Type something.") // When nothing's been typed yet.
-                    }
+            // This is the search box and the albums it returns.
+            SearchBox(textFieldQuery = textFieldQuery)
+            AlbumCardResults(
+                textFieldQuery = textFieldQuery,
+                isLoading = isLoading,
+                foundStuff = foundStuff
+            )
 
-                    isLoading.value -> {
-                        CircularProgressIndicator() // Show that it's visibly fetching results
-                    }
-
-                    foundStuff.isNotEmpty() -> {
-                        // Else, show the result.
-                        for (infoTuple in foundStuff) {
-                            val (artistName, albumName, link, uri) = infoTuple
-
-                            SpotifyCard(
-                                artistName = artistName,
-                                albumName = albumName,
-                                link = link,
-                                modifier = Modifier.clickable {
-                                    spotifyAppRemote?.playerApi?.play(uri)
-                                }
-                            )
-                        }
-                    }
-
-                    else -> {
-                        Text("No results found.") // Terrible search.
-                    }
-                }
-
-                // If the shit isn't init.
-                val tracksInit = (currentAlbumTracks != null) && (currentAlbumTracks?.size!! > 0)
-                if (currTrackName != "Track: " && tracksInit) {
-                    Column {
-                        Text(currAlbumName, fontSize = 12.sp)
-                        Text(currTrackName, fontSize = 12.sp)
-
-                        Spacer(modifier = Modifier.size(8.dp))
-
-                        // Something's not right here.
-                        if (currentAlbumTracks!!.size == 1 && currentAlbumTracks[0] is List<*>) {
-                            Column(
-                                verticalArrangement = Arrangement.spacedBy(2.5.dp)
-                            ) {
-                                for (track in (currentAlbumTracks[0] as List<*>)) {
-                                    if (track is SimpleTrack) {
-                                        Card(
-                                            border = BorderStroke(1.5.dp, Color.Black),
-                                            shape = RoundedCornerShape(0), modifier = Modifier
-                                                .clickable {
-                                                    spotifyAppRemote?.playerApi?.play(track.uri.uri)
-                                                }
-                                                .fillMaxWidth()
-                                        ) {
-                                            Box(contentAlignment = Alignment.Center) {
-                                                Text(
-                                                    "${track.trackNumber}. ${track.name} (${
-                                                        msToDuration(
-                                                            track.length
-                                                        )
-                                                    })",
-                                                    textAlign = TextAlign.Center,
-                                                    modifier = Modifier.padding(4.dp)
-                                                )
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                } else {
-                    CircularProgressIndicator()
-                    Text("Shit is loading, give it a second!")
-                }
-            }
+            // These are the tracks for the currently playing song.
+            TrackListCards(
+                spotifyAppRemote = spotifyAppRemote,
+                currTrackName = currTrackName,
+                currAlbumName = currAlbumName,
+                currentAlbumTracks = currentAlbumTracks
+            )
         }
     }
 }
