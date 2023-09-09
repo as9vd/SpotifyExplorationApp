@@ -344,43 +344,48 @@ class MainActivity : ComponentActivity() {
                     }
                 }
 
-                Column {
-                    Text(currAlbumName, fontSize = 12.sp)
-                    Text(currTrackName, fontSize = 12.sp)
+                // If the shit isn't init.
+                if (currTrackName != "Track: ") {
+                    Column {
+                        Text(currAlbumName, fontSize = 12.sp)
+                        Text(currTrackName, fontSize = 12.sp)
 
-                    Spacer(modifier = Modifier.size(8.dp))
+                        Spacer(modifier = Modifier.size(8.dp))
 
-                    // Something's not right here.
-                    if (currentAlbumTracks.size == 1 && currentAlbumTracks[0] is List<*>) {
-                        Column(
-                            verticalArrangement = Arrangement.spacedBy(2.5.dp)
-                        ) {
-                            for (track in (currentAlbumTracks[0] as List<*>)) {
-                                if (track is SimpleTrack) {
-                                    Card(
-                                        border = BorderStroke(1.5.dp, Color.Black),
-                                        shape = RoundedCornerShape(0), modifier = Modifier
-                                            .clickable {
-                                                spotifyAppRemote?.playerApi?.play(track.uri.uri)
+                        // Something's not right here.
+                        if (currentAlbumTracks.size == 1 && currentAlbumTracks[0] is List<*>) {
+                            Column(
+                                verticalArrangement = Arrangement.spacedBy(2.5.dp)
+                            ) {
+                                for (track in (currentAlbumTracks[0] as List<*>)) {
+                                    if (track is SimpleTrack) {
+                                        Card(
+                                            border = BorderStroke(1.5.dp, Color.Black),
+                                            shape = RoundedCornerShape(0), modifier = Modifier
+                                                .clickable {
+                                                    spotifyAppRemote?.playerApi?.play(track.uri.uri)
+                                                }
+                                                .fillMaxWidth()
+                                        ) {
+                                            Box(contentAlignment = Alignment.Center) {
+                                                Text(
+                                                    "${track.trackNumber}. ${track.name} (${
+                                                        msToDuration(
+                                                            track.length
+                                                        )
+                                                    })",
+                                                    textAlign = TextAlign.Center,
+                                                    modifier = Modifier.padding(4.dp)
+                                                )
                                             }
-                                            .fillMaxWidth()
-                                    ) {
-                                        Box(contentAlignment = Alignment.Center) {
-                                            Text(
-                                                "${track.trackNumber}. ${track.name} (${
-                                                    msToDuration(
-                                                        track.length
-                                                    )
-                                                })",
-                                                textAlign = TextAlign.Center,
-                                                modifier = Modifier.padding(4.dp)
-                                            )
                                         }
                                     }
                                 }
                             }
                         }
                     }
+                } else {
+                    Text("Shit is loading, give it a second!")
                 }
             }
         }
