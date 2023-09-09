@@ -124,11 +124,11 @@ class MainActivity : ComponentActivity() {
 
         lifecycleScope.launch {
             snapshotFlow { albumUri.value }.distinctUntilChanged().collect {
+                currentAlbumTracks.value.clear()
                 Log.d("Name Changed", "NAME CHANGED YOU PAGAN!")
                 try {
                     val album = publicSpotifyAppApi?.albums?.getAlbum(albumUri.value)
                     if (album?.tracks != null) {
-                        currentAlbumTracks.value.clear()
                         currentAlbumTracks.value.addAll(listOf(album.tracks))
                     }
                 } catch (e: Exception) {
@@ -345,7 +345,8 @@ class MainActivity : ComponentActivity() {
                 }
 
                 // If the shit isn't init.
-                if (currTrackName != "Track: ") {
+                val tracksInit = (currentAlbumTracks.size > 0)
+                if (currTrackName != "Track: " && tracksInit) {
                     Column {
                         Text(currAlbumName, fontSize = 12.sp)
                         Text(currTrackName, fontSize = 12.sp)
@@ -385,6 +386,7 @@ class MainActivity : ComponentActivity() {
                         }
                     }
                 } else {
+                    CircularProgressIndicator()
                     Text("Shit is loading, give it a second!")
                 }
             }
