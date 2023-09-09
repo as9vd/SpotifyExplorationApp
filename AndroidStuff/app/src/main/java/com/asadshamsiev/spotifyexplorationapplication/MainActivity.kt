@@ -5,24 +5,13 @@ import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Text
@@ -30,24 +19,15 @@ import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.derivedStateOf
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.lifecycleScope
-import coil.compose.AsyncImage
 import com.adamratzman.spotify.SpotifyAppApi
 import com.adamratzman.spotify.endpoints.pub.SearchApi
-import com.adamratzman.spotify.models.SimpleTrack
 import com.adamratzman.spotify.models.SpotifySearchResult
-import com.adamratzman.spotify.models.Track
 import com.adamratzman.spotify.spotifyAppApi
 import com.asadshamsiev.spotifyexplorationapplication.ui.theme.AppTheme
 import com.facebook.flipper.android.AndroidFlipperClient
@@ -60,7 +40,6 @@ import com.spotify.android.appremote.api.Connector
 import com.spotify.android.appremote.api.SpotifyAppRemote
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -90,6 +69,15 @@ class MainActivity : ComponentActivity() {
     private val albumUri = mutableStateOf(UNINIT_STR)
     private val albumName = mutableStateOf(UNINIT_STR)
 
+    private val combinedSpotifyState =
+        mutableStateOf(
+            SpotifyState(
+                albumName = UNINIT_STR,
+                trackName = UNINIT_STR,
+                currentAlbumTracks = ArrayList()
+            )
+        )
+
     @SuppressLint("MutableCollectionMutableState")
     private val currentAlbumTracks = mutableStateOf(arrayListOf<Any>())
 
@@ -111,11 +99,37 @@ class MainActivity : ComponentActivity() {
                     run {
                         musicPlaying.value = !state.isPaused
 
-                        trackUri.value = state.track.uri
-                        trackName.value = state.track.name
+                        // Only if it's different.
+                        if (trackUri.value != state.track.uri) {
+                            trackUri.value = state.track.uri
+                            trackName.value = state.track.name
 
-                        albumUri.value = state.track.album.uri
-                        albumName.value = state.track.album.name
+                            albumUri.value = state.track.album.uri
+                            albumName.value = state.track.album.name
+
+                            lifecycleScope.launch {
+                                Log.d("Name Changed", "NAME CHANGED YOU PAGAN!")
+                                try {
+                                    val album =
+                                        publicSpotifyAppApi?.albums?.getAlbum(albumUri.value)
+                                    if (album?.tracks != null) {
+                                        val updatedAlbumTracks = arrayListOf<Any>()
+                                        updatedAlbumTracks.addAll(listOf(album.tracks))
+                                        currentAlbumTracks.value = updatedAlbumTracks
+                                        combinedSpotifyState.value =
+                                            SpotifyState(
+                                                state.track.album.name,
+                                                state.track.name,
+                                                updatedAlbumTracks
+                                            )
+                                        failedToGetTracks.value = false
+                                    }
+                                } catch (e: Exception) {
+                                    Log.d("Error", "Failed to get album tracks.")
+                                    failedToGetTracks.value = true
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -129,24 +143,6 @@ class MainActivity : ComponentActivity() {
         // 2. Connect the Spotify API that'll call the public search shit.
         lifecycleScope.launch {
             buildSpotifyPublicApi()
-        }
-
-        lifecycleScope.launch {
-            snapshotFlow { albumUri.value }.distinctUntilChanged().collect {
-                Log.d("Name Changed", "NAME CHANGED YOU PAGAN!")
-                try {
-                    val album = publicSpotifyAppApi?.albums?.getAlbum(albumUri.value)
-                    if (album?.tracks != null) {
-                        val updatedAlbumTracks = arrayListOf<Any>()
-                        updatedAlbumTracks.addAll(listOf(album.tracks))
-                        currentAlbumTracks.value = updatedAlbumTracks
-                        failedToGetTracks.value = false
-                    }
-                } catch (e: Exception) {
-                    Log.d("Error", "Failed to get album tracks.")
-                    failedToGetTracks.value = true
-                }
-            }
         }
     }
 
@@ -183,9 +179,7 @@ class MainActivity : ComponentActivity() {
                 MainScreen(
                     spotifyApiDead.value,
                     localSpotifyDead.value,
-                    "Track: ${trackName.value}",
-                    "Album: ${albumName.value}",
-                    currentAlbumTracks.value
+                    combinedSpotifyState.value
                 )
             }
         }
@@ -272,9 +266,7 @@ class MainActivity : ComponentActivity() {
     fun MainScreen(
         spotifyApiDead: Boolean,
         localSpotifyDead: Boolean,
-        currTrackName: String,
-        currAlbumName: String,
-        currentAlbumTracks: MutableList<Any>
+        combinedSpotifyState: SpotifyState
     ) {
         val textFieldQuery = remember { mutableStateOf(UNINIT_STR) }
         val foundStuff = remember { mutableListOf<List<String>>() }
@@ -327,21 +319,27 @@ class MainActivity : ComponentActivity() {
                 localSpotifyDead = localSpotifyDead
             )
 
-            // This is the search box and the albums it returns.
-            SearchBox(textFieldQuery = textFieldQuery)
-            AlbumCardResults(
-                textFieldQuery = textFieldQuery,
-                isLoading = isLoading,
-                foundStuff = foundStuff
-            )
+            if (!spotifyApiDead && !localSpotifyDead) {
+                // This is the search box and the albums it returns.
+                SearchBox(textFieldQuery = textFieldQuery)
+                AlbumCardResults(
+                    textFieldQuery = textFieldQuery,
+                    isLoading = isLoading,
+                    foundStuff = foundStuff
+                )
 
-            // This will show the track list of the album of the currently played song.
-            TrackListCards(
-                spotifyAppRemote = spotifyAppRemote,
-                currTrackName = currTrackName,
-                currAlbumName = currAlbumName,
-                currentAlbumTracks = currentAlbumTracks
-            )
+                val currAlbumName = "Album: ${combinedSpotifyState.albumName}"
+                val currTrackName = "Track: ${combinedSpotifyState.trackName}"
+                val currentAlbumTracks = combinedSpotifyState.currentAlbumTracks
+
+                // This will show the track list of the album of the currently played song.
+                TrackListCards(
+                    spotifyAppRemote = spotifyAppRemote,
+                    currTrackName = currTrackName,
+                    currAlbumName = currAlbumName,
+                    currentAlbumTracks = currentAlbumTracks!!
+                )
+            }
         }
     }
 }

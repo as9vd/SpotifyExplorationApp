@@ -54,7 +54,7 @@ fun TrackCard(spotifyAppRemote: SpotifyAppRemote? = null, track: SimpleTrack) {
                         track.length
                     )
                 })",
-                // textAlign = TextAlign.Center,
+                textAlign = TextAlign.Center,
                 modifier = Modifier.padding(4.dp)
             )
         }
@@ -70,56 +70,25 @@ fun TrackListCards(
 ) {
     val tracksInit = currentAlbumTracks.isNotEmpty()
 
-    // Initialize the list as not visible.
-    val listVisible = remember { mutableStateOf(false) }
-
-    // Track the previous album tracks to detect changes.
-    val previousAlbumTracks = rememberUpdatedState(currentAlbumTracks)
-
-    LaunchedEffect(Unit) {
-        // On initial composition, show the list after a short delay.
-        delay(100)
-        listVisible.value = true
-    }
-
-    LaunchedEffect(currentAlbumTracks) {
-        if (previousAlbumTracks != currentAlbumTracks) {
-            listVisible.value = false
-            delay(300) // Match the exit animation duration.
-            listVisible.value = true
-        }
-    }
-
     if (currTrackName != "Track: " && tracksInit) {
         Column {
-            Text(currAlbumName, fontSize = 12.sp)
-            Text(currTrackName, fontSize = 12.sp)
+            if (currentAlbumTracks.size == 1 && currentAlbumTracks[0] is List<*>) {
+                Text(currAlbumName, fontSize = 12.sp, textAlign = TextAlign.Start)
+                Text(currTrackName, fontSize = 12.sp, textAlign = TextAlign.Start)
 
-            Spacer(modifier = Modifier.size(8.dp))
+                Spacer(modifier = Modifier.size(8.dp))
 
-            AnimatedVisibility(
-                visible = listVisible.value,
-                enter = slideInVertically(
-                    initialOffsetY = { fullHeight -> fullHeight },
-                    animationSpec = tween(300)
-                ),
-                exit = slideOutVertically(
-                    targetOffsetY = { fullHeight -> fullHeight },
-                    animationSpec = tween(300)
-                )
-            ) {
-                if (currentAlbumTracks.size == 1 && currentAlbumTracks[0] is List<*> && listVisible.value) {
-                    Column(
-                        verticalArrangement = Arrangement.spacedBy(2.5.dp)
-                    ) {
-                        for (track in (currentAlbumTracks[0] as List<*>)) {
-                            if (track is SimpleTrack) {
-                                TrackCard(spotifyAppRemote = spotifyAppRemote, track = track)
-                            }
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(2.5.dp)
+                ) {
+                    for (track in (currentAlbumTracks[0] as List<*>)) {
+                        if (track is SimpleTrack) {
+                            TrackCard(spotifyAppRemote = spotifyAppRemote, track = track)
                         }
                     }
                 }
             }
+
         }
     } else {
         CircularProgressIndicator()
