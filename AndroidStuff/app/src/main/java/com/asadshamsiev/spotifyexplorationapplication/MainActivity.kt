@@ -44,6 +44,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.lifecycleScope
 import com.adamratzman.spotify.SpotifyAppApi
 import com.adamratzman.spotify.endpoints.pub.SearchApi
+import com.adamratzman.spotify.models.SimpleTrack
 import com.adamratzman.spotify.models.SpotifySearchResult
 import com.adamratzman.spotify.spotifyAppApi
 import com.asadshamsiev.spotifyexplorationapplication.ui.theme.AppTheme
@@ -89,6 +90,8 @@ class MainActivity : ComponentActivity() {
     private val albumUri = mutableStateOf(UNINIT_STR)
     private val albumName = mutableStateOf(UNINIT_STR)
 
+    private val changed = mutableStateOf(false)
+
     private val combinedSpotifyState =
         mutableStateOf(
             SpotifyState(
@@ -99,7 +102,7 @@ class MainActivity : ComponentActivity() {
         )
 
     @SuppressLint("MutableCollectionMutableState")
-    private val currentAlbumTracks = mutableStateOf(arrayListOf<Any>())
+    private val currentAlbumTracks = mutableStateOf(arrayListOf<Pair<ArrayList<Pair<String, String>>, SimpleTrack>>())
 
     override fun onStart() {
         super.onStart()
@@ -133,14 +136,27 @@ class MainActivity : ComponentActivity() {
                                     val album =
                                         publicSpotifyAppApi?.albums?.getAlbum(albumUri.value)
                                     if (album?.tracks != null) {
-                                        val updatedAlbumTracks = arrayListOf<Any>()
+                                        val updatedAlbumTracks = arrayListOf<Pair<ArrayList<Pair<String, String>>, SimpleTrack>>()
 
                                         // Seems to be the first index always.. might come back and
                                         // bite me in the arse later.
                                         for (track in album.tracks) {
                                             val trackLength: Int = track.length
-                                            updatedAlbumTracks.add(Pair(trackUtils.sampleSong(trackLength), track))
+                                            updatedAlbumTracks.add(
+                                                Pair(
+                                                    trackUtils.sampleSong(
+                                                        trackLength
+                                                    ), track
+                                                )
+                                            )
                                         }
+
+                                        if (currentAlbumTracks.value == updatedAlbumTracks) {
+                                            changed.value = false
+                                            return@launch
+                                        }
+
+                                        changed.value = true
 
                                         currentAlbumTracks.value = updatedAlbumTracks
                                         combinedSpotifyState.value =
@@ -159,6 +175,8 @@ class MainActivity : ComponentActivity() {
                         }
                     }
                 }
+
+                spotifyAppRemote
             }
 
             override fun onFailure(throwable: Throwable) {
@@ -366,10 +384,9 @@ class MainActivity : ComponentActivity() {
                     currTrackName = currTrackName,
                     currAlbumName = currAlbumName,
                     currAlbumUri = currAlbumUri,
-                    currentAlbumTracks = currentAlbumTracks!!
+                    currentAlbumTracks = currentAlbumTracks,
+                    changed = changed.value
                 )
-
-                Text("HERE is where the duration stuff would show.")
             }
         }
     }
