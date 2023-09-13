@@ -12,6 +12,13 @@ class TrackUtils {
         return "%d:%02d".format(minutes, seconds)
     }
 
+    fun durationToMs(duration: String): Long {
+        val split = duration.split(":")
+        val minutes = split[0].toLong()
+        val seconds = split[1].toLong()
+        return (minutes * 60 + seconds) * 1000
+    }
+
     fun sampleSong(totalLengthMillis: Int): ArrayList<Pair<String, String>> {
         val targetLength = (totalLengthMillis * 0.51).toInt()
         val numPeriods = Random.nextInt(4, 8)

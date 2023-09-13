@@ -142,7 +142,6 @@ class MainActivity : ComponentActivity() {
                                             updatedAlbumTracks.add(Pair(trackUtils.sampleSong(trackLength), track))
                                         }
 
-                                        // updatedAlbumTracks.addAll(listOf(album.tracks))
                                         currentAlbumTracks.value = updatedAlbumTracks
                                         combinedSpotifyState.value =
                                             SpotifyState(
@@ -207,6 +206,7 @@ class MainActivity : ComponentActivity() {
                 MainScreen(
                     spotifyApiDead.value,
                     localSpotifyDead.value,
+                    albumUri.value,
                     combinedSpotifyState.value
                 )
             }
@@ -221,7 +221,8 @@ class MainActivity : ComponentActivity() {
             res = withContext(Dispatchers.IO) {
                 publicSpotifyAppApi!!.search.search(
                     query = query,
-                    searchTypes = listOf(SearchApi.SearchType.Album).toTypedArray()
+                    searchTypes = listOf(SearchApi.SearchType.Album).toTypedArray(),
+                    limit = 4
                 )
             }
         }
@@ -265,7 +266,7 @@ class MainActivity : ComponentActivity() {
             }
 
             isLoading.value -> {
-                CircularProgressIndicator() // Show that it's visibly fetching results
+                CircularProgressIndicator() // Show that it's visibly fetching results.
             }
 
             foundStuff.isNotEmpty() -> {
@@ -292,6 +293,7 @@ class MainActivity : ComponentActivity() {
     fun MainScreen(
         spotifyApiDead: Boolean,
         localSpotifyDead: Boolean,
+        currAlbumUri: String,
         combinedSpotifyState: SpotifyState
     ) {
         val textFieldQuery = remember { mutableStateOf(UNINIT_STR) }
@@ -305,7 +307,7 @@ class MainActivity : ComponentActivity() {
                 // In order to show a loading Composable whilst results are fetched.
                 isLoading.value = true
 
-                delay(1000L) // Debounce for 1 second.
+                delay(1000L)
                 val result = searchForResult(textFieldQuery.value)
                 foundStuff.clear()
 
@@ -363,10 +365,11 @@ class MainActivity : ComponentActivity() {
                     spotifyAppRemote = spotifyAppRemote,
                     currTrackName = currTrackName,
                     currAlbumName = currAlbumName,
+                    currAlbumUri = currAlbumUri,
                     currentAlbumTracks = currentAlbumTracks!!
                 )
 
-                Text("HERE is where the duration stuff would show")
+                Text("HERE is where the duration stuff would show.")
             }
         }
     }
