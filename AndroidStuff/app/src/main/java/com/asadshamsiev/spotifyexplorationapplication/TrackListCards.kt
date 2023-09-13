@@ -69,34 +69,29 @@ fun TrackCard(spotifyAppRemote: SpotifyAppRemote? = null, track: SimpleTrack) {
     }
 
     val onClick: () -> Unit = {
-        spotifyAppRemote?.playerApi?.play(track.uri.uri)?.setResultCallback {
-            // Once play has succeeded, then you can seek.
-            spotifyAppRemote.playerApi.seekTo(
-                trackUtils.durationToMs(
-                    currentInterval.value.first
-                )
-            )?.setResultCallback {
-                Log.d("PositionSought", "Position successfully sought mate (I think?).")
-            }?.setErrorCallback { throwable ->
+        spotifyAppRemote?.playerApi?.play(track.uri.uri)?.apply {
+            setResultCallback {
+                // Introducing a delay of 1 second before executing the seek action
+                handler.value.postDelayed({
+                    spotifyAppRemote?.playerApi?.seekToRelativePosition(trackUtils.durationToMs(currentInterval.value.first))?.setResultCallback {
+                        Log.d("PositionSought", "Position successfully sought mate (I think?).")
+                    }?.setErrorCallback { throwable ->
+                        Log.e("SeekError", "Error seeking position: ${throwable.message}")
+                        Toast.makeText(context, "Position wasn't successfully sought you tinker.", Toast.LENGTH_SHORT).show()
+                    }
+                }, 1000) // Delay of 1 second.
+
+                handler.value.post(checkProgressRunnable) // Check progress as it cracks on mate.
+
                 Toast.makeText(
                     context,
-                    "Position wasn't successfully sought you muppet: ${throwable.message}.",
+                    "Curr: ${currentInterval.value} Translated: ${(trackUtils.durationToMs(currentInterval.value.first))} " + intervals.toString(),
                     Toast.LENGTH_SHORT
                 ).show()
-                Log.d("PositionSought", "Screwed up: ${throwable.message}")
             }
-
-            handler.value.post(checkProgressRunnable) // Check progress as it cracks on mate.
-
-            Toast.makeText(
-                context,
-                "Curr: ${currentInterval.value} Translated: ${
-                    (trackUtils.durationToMs(
-                        currentInterval.value.first
-                    ))
-                } " + intervals.toString(),
-                Toast.LENGTH_SHORT
-            ).show()
+            setErrorCallback { throwable ->
+                Log.e("PlayError", "Error playing track: ${throwable.message}")
+            }
         }
     }
 
