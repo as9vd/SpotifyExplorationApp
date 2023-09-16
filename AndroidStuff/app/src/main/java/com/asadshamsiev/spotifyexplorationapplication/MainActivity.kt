@@ -41,6 +41,7 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.lifecycleScope
 import com.adamratzman.spotify.SpotifyAppApi
 import com.adamratzman.spotify.endpoints.pub.SearchApi
@@ -96,7 +97,6 @@ class MainActivity : ComponentActivity() {
         mutableStateOf(
             SpotifyState(
                 albumName = UNINIT_STR,
-                trackName = UNINIT_STR,
                 currentAlbumTracks = ArrayList()
             )
         )
@@ -120,8 +120,8 @@ class MainActivity : ComponentActivity() {
                 Log.d("SpotifyStuff", "Connected! Finally.")
                 spotifyAppRemote = appRemote
                 spotifyAppRemote?.playerApi?.subscribeToPlayerState()?.setEventCallback { state ->
-                    if (trackUri.value != state.track.uri) { // Only if it's different.
-                        run {
+                    if (trackUri.value != state.track.uri) {
+                        run { // 1. Change song name (if changed).
                             musicPlaying.value = !state.isPaused
 
                             Log.d("TrackUri", "Current TrackUri: ${trackUri.value}")
@@ -129,7 +129,11 @@ class MainActivity : ComponentActivity() {
 
                             trackUri.value = state.track.uri
                             trackName.value = state.track.name
+                        }
+                    }
 
+                    if (albumUri.value != state.track.album.uri) { // 2. Change album name (if changed).
+                        run {
                             albumUri.value = state.track.album.uri
                             albumName.value = state.track.album.name
 
@@ -155,6 +159,7 @@ class MainActivity : ComponentActivity() {
                                             )
                                         }
 
+                                        // Might be redundant?
                                         if (currentAlbumTracks.value == updatedAlbumTracks) {
                                             changed.value = false
                                             return@launch
@@ -166,21 +171,21 @@ class MainActivity : ComponentActivity() {
                                         combinedSpotifyState.value =
                                             SpotifyState(
                                                 state.track.album.name,
-                                                state.track.name,
                                                 updatedAlbumTracks
                                             )
                                         failedToGetTracks.value = false
                                     }
                                 } catch (e: Exception) {
-                                    Log.d("CurrentAlbumTracks", "Failed to get album tracks: ${e}")
+                                    Log.d(
+                                        "CurrentAlbumTracks",
+                                        "Failed to get album tracks: ${e}"
+                                    )
                                     failedToGetTracks.value = true
                                 }
                             }
                         }
                     }
                 }
-
-                spotifyAppRemote
             }
 
             override fun onFailure(throwable: Throwable) {
@@ -378,14 +383,16 @@ class MainActivity : ComponentActivity() {
                     foundStuff = foundStuff
                 )
 
-                val currAlbumName = "Album: ${combinedSpotifyState.albumName}"
-                val currTrackName = "Track: ${combinedSpotifyState.trackName}"
+                val currAlbumName = "${combinedSpotifyState.albumName}"
                 val currentAlbumTracks = combinedSpotifyState.currentAlbumTracks
+
+                Column(horizontalAlignment = Alignment.Start) {
+                    Text("Current Album: ${currAlbumName}", fontSize = 12.sp)
+                }
 
                 // This will show the track list of the album of the currently played song.
                 TrackListCards(
                     spotifyAppRemote = spotifyAppRemote,
-                    currTrackName = currTrackName,
                     currAlbumName = currAlbumName,
                     currAlbumUri = currAlbumUri,
                     currentAlbumTracks = currentAlbumTracks,

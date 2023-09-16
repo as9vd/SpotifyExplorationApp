@@ -239,7 +239,10 @@ fun ExploreAlbumButton(
         if (!buttonClicked.value) {
             Text("Start Exploring")
         } else {
-            Text("Stop Exploring")
+            val currentTrackIntervals = currentAlbumTracks[currentTrackIndex.value].first
+            val currentInterval = currentTrackIntervals[currentIntervalIndex.value]
+
+            Text("${currentInterval} Stop Exploring")
         }
     }
 }
@@ -247,7 +250,6 @@ fun ExploreAlbumButton(
 @Composable
 fun TrackListCards(
     spotifyAppRemote: SpotifyAppRemote? = null,
-    currTrackName: String,
     currAlbumName: String,
     currAlbumUri: String,
     currentAlbumTracks: ArrayList<Pair<ArrayList<Pair<String, String>>, SimpleTrack>>,
@@ -261,9 +263,6 @@ fun TrackListCards(
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(currAlbumName, fontSize = 12.sp, textAlign = TextAlign.Start)
-            Text(currTrackName, fontSize = 12.sp, textAlign = TextAlign.Start)
-
             Spacer(modifier = Modifier.size(8.dp))
 
             ExploreAlbumButton(
