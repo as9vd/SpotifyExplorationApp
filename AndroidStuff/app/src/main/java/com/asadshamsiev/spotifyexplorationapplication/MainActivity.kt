@@ -102,7 +102,8 @@ class MainActivity : ComponentActivity() {
         )
 
     @SuppressLint("MutableCollectionMutableState")
-    private val currentAlbumTracks = mutableStateOf(arrayListOf<Pair<ArrayList<Pair<String, String>>, SimpleTrack>>())
+    private val currentAlbumTracks =
+        mutableStateOf(arrayListOf<Pair<ArrayList<Pair<String, String>>, SimpleTrack>>())
 
     override fun onStart() {
         super.onStart()
@@ -119,11 +120,13 @@ class MainActivity : ComponentActivity() {
                 Log.d("SpotifyStuff", "Connected! Finally.")
                 spotifyAppRemote = appRemote
                 spotifyAppRemote?.playerApi?.subscribeToPlayerState()?.setEventCallback { state ->
-                    run {
-                        musicPlaying.value = !state.isPaused
+                    if (trackUri.value != state.track.uri) { // Only if it's different.
+                        run {
+                            musicPlaying.value = !state.isPaused
 
-                        // Only if it's different.
-                        if (trackUri.value != state.track.uri) {
+                            Log.d("TrackUri", "Current TrackUri: ${trackUri.value}")
+                            Log.d("TrackUri", "State TrackUri: ${state.track.uri}")
+
                             trackUri.value = state.track.uri
                             trackName.value = state.track.name
 
@@ -136,7 +139,8 @@ class MainActivity : ComponentActivity() {
                                     val album =
                                         publicSpotifyAppApi?.albums?.getAlbum(albumUri.value)
                                     if (album?.tracks != null) {
-                                        val updatedAlbumTracks = arrayListOf<Pair<ArrayList<Pair<String, String>>, SimpleTrack>>()
+                                        val updatedAlbumTracks =
+                                            arrayListOf<Pair<ArrayList<Pair<String, String>>, SimpleTrack>>()
 
                                         // Seems to be the first index always.. might come back and
                                         // bite me in the arse later.
@@ -168,7 +172,7 @@ class MainActivity : ComponentActivity() {
                                         failedToGetTracks.value = false
                                     }
                                 } catch (e: Exception) {
-                                    Log.d("Error", "Failed to get album tracks.")
+                                    Log.d("CurrentAlbumTracks", "Failed to get album tracks: ${e}")
                                     failedToGetTracks.value = true
                                 }
                             }

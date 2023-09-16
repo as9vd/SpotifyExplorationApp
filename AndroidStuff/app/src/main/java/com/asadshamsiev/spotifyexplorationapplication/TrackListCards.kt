@@ -330,7 +330,7 @@ fun TrackListCards(
 ) {
     val tracksInit = currentAlbumTracks.isNotEmpty()
 
-    if (currTrackName != "Track: " && tracksInit) {
+    if (tracksInit) {
         Column(
             modifier = Modifier.fillMaxSize(),
             verticalArrangement = Arrangement.Center,

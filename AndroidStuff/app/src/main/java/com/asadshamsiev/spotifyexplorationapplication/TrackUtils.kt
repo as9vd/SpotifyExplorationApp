@@ -20,33 +20,26 @@ class TrackUtils {
     }
 
     fun sampleSong(totalLengthMillis: Int): ArrayList<Pair<String, String>> {
-        val targetLength = (totalLengthMillis * 0.51).toInt()
-        val numPeriods = Random.nextInt(4, 8)
+        val numPeriod = 3
+
+        val targetLength =
+            ((totalLengthMillis - 2000) * 0.51).toInt() // A little offset so doesn't go to end.
+        val segmentLength = targetLength / numPeriod
+        val thirdOfSong = totalLengthMillis / numPeriod
 
         val periods = mutableListOf<Period>()
 
-        var currentLength = 0
-        var lastEnd = 0
+        for (i in 0 until numPeriod) {
+            val thirdStart = i * thirdOfSong
+            val thirdEnd = thirdStart + thirdOfSong
 
-        for (i in 0 until numPeriods - 1) {
-            val remainingPeriods = numPeriods - periods.size
-            val remainingLength = targetLength - currentLength
-            val averageRemainingLength = remainingLength / remainingPeriods
-
-            val maxStart = totalLengthMillis - averageRemainingLength - (remainingPeriods - 1) * averageRemainingLength
-            val start = Random.nextInt(lastEnd, maxStart.coerceAtLeast(lastEnd))
-            val end = start + averageRemainingLength
+            val start = Random.nextInt(thirdStart, thirdEnd - segmentLength)
+            val end = start + segmentLength
 
             periods.add(Period(start, end))
-            currentLength += averageRemainingLength
-            lastEnd = end
         }
 
-        // Adjust last period to match target length.
-        val lastPeriodStart = Random.nextInt(lastEnd, totalLengthMillis - (targetLength - currentLength))
-        periods.add(Period(lastPeriodStart, lastPeriodStart + (targetLength - currentLength)))
-
-        val returnVal = ArrayList<Pair<String,String>>()
+        val returnVal = ArrayList<Pair<String, String>>()
         periods.forEach { period ->
             returnVal.add(Pair(msToDuration(period.start), msToDuration(period.end)))
         }
