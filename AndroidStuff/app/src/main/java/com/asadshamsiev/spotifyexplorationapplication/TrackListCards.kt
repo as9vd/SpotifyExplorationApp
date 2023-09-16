@@ -55,7 +55,8 @@ fun TrackCard(
         override fun run() {
             spotifyAppRemote?.playerApi?.playerState?.setResultCallback { state ->
                 val currentPosition = state.playbackPosition
-                val endForCurrentInterval: Long = trackUtils.durationToMs(currentInterval.value.second)
+                val endForCurrentInterval: Long =
+                    trackUtils.durationToMs(currentInterval.value.second)
 
                 if (currentPosition >= endForCurrentInterval) {
                     currentIndex.value++
@@ -63,7 +64,8 @@ fun TrackCard(
                     // If there's another interval to be played, move on and play it.
                     if (currentIndex.value < intervals.size) {
                         currentInterval.value = intervals[currentIndex.value]
-                        val startOfNextInterval: Long = trackUtils.durationToMs(currentInterval.value.first)
+                        val startOfNextInterval: Long =
+                            trackUtils.durationToMs(currentInterval.value.first)
 
                         spotifyAppRemote.playerApi.seekTo(startOfNextInterval)
                     } else { // Otherwise, pause and crack on.
@@ -101,9 +103,21 @@ fun TrackCard(
 
                 handler.value.post(checkProgressRunnable) // Check progress as it cracks on mate.
 
+                var sum: Long = 0
+                for (interval in intervals) {
+                    sum += trackUtils.durationToMs(interval.second) - trackUtils.durationToMs(
+                        interval.first
+                    )
+                }
+
+                val statement =
+                    "${intervals.toString()} " +
+                            "${trackUtils.msToDuration(track.length)} " +
+                            "${((((sum.toDouble() / (track.length.toLong())) * 100) * 100) / 100).toFloat()}%"
+
                 Toast.makeText(
                     context,
-                    intervals.toString(),
+                    statement,
                     Toast.LENGTH_LONG
                 ).show()
             }
@@ -134,98 +148,6 @@ fun TrackCard(
         }
     }
 }
-
-//@Composable
-//fun ExploreAlbumButton(
-//    spotifyAppRemote: SpotifyAppRemote,
-//    currentAlbumTracks: ArrayList<Pair<ArrayList<Pair<String, String>>, SimpleTrack>>,
-//    currAlbumUri: String,
-//    albumChanged: Boolean
-//) {
-//    // albumChanged is True only if the user's album changes.
-//    // You'd want the user to keep the behaviour, even if they manually skip, because
-//    // you can be sampling shit and still want to skip through trash.
-//    val buttonClicked = remember { mutableStateOf(false) }
-//
-//    var currentTrackIndex = remember { mutableStateOf(0) }
-//    var currentIntervalIndex = remember { mutableStateOf(0) }
-//
-//    val handler = rememberUpdatedState(Handler(Looper.getMainLooper()))
-//
-//    val checkProgressRunnable = object : Runnable {
-//        override fun run() {
-//            spotifyAppRemote.playerApi.playerState?.setResultCallback { state ->
-//                val currentPosition = state.playbackPosition // In ms (Long).
-//
-//                val currentTrack = currentAlbumTracks[currentTrackIndex.value].second
-//                val currentTrackIntervals = currentAlbumTracks[currentTrackIndex.value].first
-//
-//                val currentInterval = currentTrackIntervals[currentIntervalIndex.value]
-//                val endOfCurrentInterval: Long = trackUtils.durationToMs((currentInterval.second))
-//
-//                if (currentPosition >= endOfCurrentInterval) {
-//                    currentIntervalIndex.value++
-//
-//                    // If there's another interval to be played for this song, then play it.
-//                    if (currentIntervalIndex.value < currentTrackIntervals.size) {
-//                        val nextInterval = currentTrackIntervals[currentIntervalIndex.value]
-//                        val startOfNextInterval: Long = trackUtils.durationToMs(nextInterval.first)
-//
-//                        spotifyAppRemote.playerApi.seekTo(startOfNextInterval)
-//                    } else { // Otherwise, move on to the next song.
-//                        currentTrackIndex.value++
-//                        currentIntervalIndex.value = 0
-//
-//                        // If not at the end.
-//                        if (currentTrackIndex.value < currentAlbumTracks.size) {
-//                            spotifyAppRemote.playerApi.play(currentTrack.uri.uri)
-//                        } else {
-//                            spotifyAppRemote.playerApi.pause() // Else, just stop.
-//                            handler.value.removeCallbacks(this)
-//                            return@setResultCallback
-//                        }
-//                    }
-//                }
-//
-//                handler.value.postDelayed(this, 1000) // Every second.
-//            }
-//        }
-//    }
-//
-//    val onClick: () -> Unit = {
-//        if (!buttonClicked.value) {
-//            // Play the first song (or whichever is in the currentTrackIndex; probably 1st).
-//            spotifyAppRemote.playerApi.play(currentAlbumTracks[currentTrackIndex.value].second.uri.uri)
-//                ?.apply {
-//                    handler.value.postDelayed({
-//                        val initialInterval = currentAlbumTracks[currentTrackIndex.value].first[0]
-//                        val startOfFirstInterval = trackUtils.durationToMs(initialInterval.first)
-//
-//                        spotifyAppRemote.playerApi.seekTo(startOfFirstInterval)
-//                    }, 1000)
-//
-//                    handler.value.post(checkProgressRunnable)
-//                }
-//        } else {
-//            spotifyAppRemote.playerApi.pause()
-//            handler.value.removeCallbacks(checkProgressRunnable)
-//        }
-//
-//        buttonClicked.value = !buttonClicked.value
-//    }
-//
-//    Button(
-//        elevation = ButtonDefaults.elevatedButtonElevation(),
-//        border = BorderStroke(1.dp, Color.Black),
-//        onClick = onClick
-//    ) {
-//        if (!buttonClicked.value) {
-//            Text("Start Exploring")
-//        } else {
-//            Text("Stop Exploring")
-//        }
-//    }
-//}
 
 @Composable
 fun ExploreAlbumButton(
@@ -268,8 +190,10 @@ fun ExploreAlbumButton(
                         if (currentTrackIndex.value < currentAlbumTracks.size) {
                             spotifyAppRemote.playerApi.play(currentAlbumTracks[currentTrackIndex.value].second.uri.uri)
 
-                            val initialInterval = currentAlbumTracks[currentTrackIndex.value].first[0]
-                            val startOfFirstInterval: Long = trackUtils.durationToMs(initialInterval.first)
+                            val initialInterval =
+                                currentAlbumTracks[currentTrackIndex.value].first[0]
+                            val startOfFirstInterval: Long =
+                                trackUtils.durationToMs(initialInterval.first)
 
                             handler.value.postDelayed({
                                 spotifyAppRemote.playerApi.seekTo(startOfFirstInterval)
@@ -288,16 +212,17 @@ fun ExploreAlbumButton(
 
     val onClick: () -> Unit = {
         if (!buttonClicked.value) {
-            spotifyAppRemote.playerApi.play(currentAlbumTracks[currentTrackIndex.value].second.uri.uri)?.apply {
-                val initialInterval = currentAlbumTracks[currentTrackIndex.value].first[0]
-                val startOfFirstInterval = trackUtils.durationToMs(initialInterval.first)
+            spotifyAppRemote.playerApi.play(currentAlbumTracks[currentTrackIndex.value].second.uri.uri)
+                ?.apply {
+                    val initialInterval = currentAlbumTracks[currentTrackIndex.value].first[0]
+                    val startOfFirstInterval = trackUtils.durationToMs(initialInterval.first)
 
-                handler.value.postDelayed({
-                    spotifyAppRemote.playerApi.seekTo(startOfFirstInterval)
-                }, 1000)
+                    handler.value.postDelayed({
+                        spotifyAppRemote.playerApi.seekTo(startOfFirstInterval)
+                    }, 1000)
 
-                handler.value.post(checkProgressRunnable)
-            }
+                    handler.value.post(checkProgressRunnable)
+                }
         } else {
             spotifyAppRemote.playerApi.pause()
             handler.value.removeCallbacks(checkProgressRunnable)
