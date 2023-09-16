@@ -386,10 +386,6 @@ class MainActivity : ComponentActivity() {
                 val currAlbumName = "${combinedSpotifyState.albumName}"
                 val currentAlbumTracks = combinedSpotifyState.currentAlbumTracks
 
-                Column(horizontalAlignment = Alignment.Start) {
-                    Text("Current Album: ${currAlbumName}", fontSize = 12.sp)
-                }
-
                 // This will show the track list of the album of the currently played song.
                 TrackListCards(
                     spotifyAppRemote = spotifyAppRemote,

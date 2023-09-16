@@ -4,11 +4,24 @@ import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import android.widget.Toast
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateDp
+import androidx.compose.animation.core.snap
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.updateTransition
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.with
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -19,14 +32,18 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ButtonElevation
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role.Companion.Button
@@ -149,6 +166,7 @@ fun TrackCard(
     }
 }
 
+@OptIn(ExperimentalAnimationApi::class)
 @Composable
 fun ExploreAlbumButton(
     spotifyAppRemote: SpotifyAppRemote,
@@ -231,18 +249,57 @@ fun ExploreAlbumButton(
         buttonClicked.value = !buttonClicked.value
     }
 
-    Button(
-        elevation = ButtonDefaults.elevatedButtonElevation(),
-        border = BorderStroke(1.dp, Color.Black),
-        onClick = onClick
-    ) {
-        if (!buttonClicked.value) {
-            Text("Start Exploring")
-        } else {
-            val currentTrackIntervals = currentAlbumTracks[currentTrackIndex.value].first
-            val currentInterval = currentTrackIntervals[currentIntervalIndex.value]
+    val currentTrackIntervals = currentAlbumTracks[currentTrackIndex.value].first
+    val currentInterval = currentTrackIntervals[currentIntervalIndex.value]
 
-            Text("${currentInterval} Stop Exploring")
+    if (!buttonClicked.value) {
+        Button(
+            elevation = ButtonDefaults.elevatedButtonElevation(),
+            border = BorderStroke(1.dp, Color.Black),
+            onClick = onClick
+        ) {
+            Text("Start Exploring")
+        }
+    } else {
+        Button(
+            elevation = ButtonDefaults.elevatedButtonElevation(),
+            border = BorderStroke(1.dp, Color.Black),
+            onClick = onClick
+        ) {
+            Text("Stop Exploring")
+        }
+
+        Spacer(modifier = Modifier.size(8.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            for ((i, interval) in currentTrackIntervals.withIndex()) {
+                val blurModifier = if (i != currentIntervalIndex.value) {
+                    Modifier.blur(12.dp)
+                } else {
+                    Modifier
+                }
+
+                AnimatedContent(
+                    targetState = blurModifier,
+                    transitionSpec = {
+                        fadeIn(animationSpec = tween(300, delayMillis = 300)) with
+                                fadeOut(animationSpec = tween(300, delayMillis = 0))
+                    },
+                    content = {
+                        Card(
+                            border = BorderStroke(0.5.dp, Color.Black),
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.onSurface
+                            ),
+                            shape = RoundedCornerShape(0),
+                            modifier = Modifier.then(it)
+                        ) {
+                            val duration = "${interval.first} - ${interval.second}"
+
+                            Text(duration, modifier = Modifier.padding(4.dp))
+                        }
+                    }
+                )
+            }
         }
     }
 }
@@ -272,6 +329,8 @@ fun TrackListCards(
                 albumChanged = changed
             )
 
+            Spacer(modifier = Modifier.size(8.dp))
+            Text("Current Album: ${currAlbumName}", fontSize = 12.sp)
             Spacer(modifier = Modifier.size(8.dp))
 
             Column(
