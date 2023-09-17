@@ -16,6 +16,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.with
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -44,6 +45,7 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role.Companion.Button
@@ -273,32 +275,30 @@ fun ExploreAlbumButton(
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             for ((i, interval) in currentTrackIntervals.withIndex()) {
                 val blurModifier = if (i != currentIntervalIndex.value) {
-                    Modifier.blur(12.dp)
+                     Modifier.blur(8.dp)
                 } else {
                     Modifier
                 }
 
-                AnimatedContent(
-                    targetState = blurModifier,
-                    transitionSpec = {
-                        fadeIn(animationSpec = tween(300, delayMillis = 300)) with
-                                fadeOut(animationSpec = tween(300, delayMillis = 0))
-                    },
-                    content = {
-                        Card(
-                            border = BorderStroke(0.5.dp, Color.Black),
-                            colors = CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.onSurface
-                            ),
-                            shape = RoundedCornerShape(0),
-                            modifier = Modifier.then(it)
-                        ) {
+                Card(
+                    border = BorderStroke(0.5.dp, Color.Black),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.onSurface
+                    ),
+                    shape = RoundedCornerShape(0)
+                ) {
+                    AnimatedContent(
+                        targetState = blurModifier,
+                        transitionSpec = {
+                            fadeIn(animationSpec = tween(300, delayMillis = 300)) with
+                                    fadeOut(animationSpec = tween(300, delayMillis = 0))
+                        },
+                        content = {
                             val duration = "${interval.first} - ${interval.second}"
-
-                            Text(duration, modifier = Modifier.padding(4.dp))
+                            Text(duration, modifier = Modifier.padding(4.dp).then(it))
                         }
-                    }
-                )
+                    )
+                }
             }
         }
     }

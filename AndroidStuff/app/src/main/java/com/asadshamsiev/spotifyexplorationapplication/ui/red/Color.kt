@@ -1,4 +1,4 @@
-package com.asadshamsiev.spotifyexplorationapplication.ui.theme
+package com.asadshamsiev.spotifyexplorationapplication.ui.red
 
 import androidx.compose.ui.graphics.Color
 

@@ -5,41 +5,29 @@ import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.animation.core.AnimationEndReason
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.LinearOutSlowInEasing
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.keyframes
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.core.updateTransition
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.gestures.*
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.rotate
-import androidx.compose.ui.draw.scale
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.lifecycleScope
@@ -48,7 +36,8 @@ import com.adamratzman.spotify.endpoints.pub.SearchApi
 import com.adamratzman.spotify.models.SimpleTrack
 import com.adamratzman.spotify.models.SpotifySearchResult
 import com.adamratzman.spotify.spotifyAppApi
-import com.asadshamsiev.spotifyexplorationapplication.ui.theme.AppTheme
+import com.asadshamsiev.spotifyexplorationapplication.ui.red.AppThemeRed
+import com.example.compose.AppThemeBlue
 import com.facebook.flipper.android.AndroidFlipperClient
 import com.facebook.flipper.android.utils.FlipperUtils
 import com.facebook.flipper.plugins.inspector.DescriptorMapping
@@ -68,6 +57,9 @@ const val clientSecret = "58f5caf8a73b439689b108824daf4c79"
 const val redirectUri = "com.asadshamsiev.spotifyexplorationapplication://callback"
 
 class MainActivity : ComponentActivity() {
+    // Change colours
+    private val colourChanged = mutableStateOf(false)
+
     // Stuff used for parsing the length in ms.
     private val trackUtils: TrackUtils = TrackUtils()
 
@@ -229,13 +221,24 @@ class MainActivity : ComponentActivity() {
         }
 
         setContent {
-            AppTheme {
-                MainScreen(
-                    spotifyApiDead.value,
-                    localSpotifyDead.value,
-                    albumUri.value,
-                    combinedSpotifyState.value
-                )
+            if (colourChanged.value) {
+                AppThemeRed {
+                    MainScreen(
+                        spotifyApiDead.value,
+                        localSpotifyDead.value,
+                        albumUri.value,
+                        combinedSpotifyState.value
+                    )
+                }
+            } else {
+                AppThemeBlue {
+                    MainScreen(
+                        spotifyApiDead.value,
+                        localSpotifyDead.value,
+                        albumUri.value,
+                        combinedSpotifyState.value
+                    )
+                }
             }
         }
     }
@@ -369,6 +372,14 @@ class MainActivity : ComponentActivity() {
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             // These errors only show when the 1. local phone API is dead or 2. the public API is dead.
+            Button(
+                onClick = {colourChanged.value = !colourChanged.value},
+                border = BorderStroke(1.dp, Color.Black),
+                colors = ButtonDefaults.buttonColors(MaterialTheme.colorScheme.tertiary),
+            ) {
+                Text(text = "Change Colours", fontSize = 12.sp)
+            }
+
             SearchConditionalErrors(
                 spotifyApiDead = spotifyApiDead,
                 localSpotifyDead = localSpotifyDead
