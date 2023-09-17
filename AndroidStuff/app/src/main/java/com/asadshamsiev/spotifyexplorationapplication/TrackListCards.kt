@@ -49,6 +49,7 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role.Companion.Button
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -159,12 +160,12 @@ fun TrackCard(
             Row {
                 Text(
                     "${track.trackNumber}.",
-                    modifier = Modifier.padding(4.dp)
+                    modifier = Modifier.padding(8.dp)
                 )
                 Text(
                     "${track.name} (${trackUtils.msToDuration(track.length)})",
                     textAlign = TextAlign.Start,
-                    modifier = Modifier.padding(4.dp)
+                    modifier = Modifier.padding(8.dp)
                 )
             }
         }
@@ -333,11 +334,11 @@ fun TrackListCards(
             )
 
             Spacer(modifier = Modifier.size(8.dp))
-            Text("Current Album: ${currAlbumName}", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+            Text("${currAlbumName}", fontSize = 16.sp, fontWeight = FontWeight.Bold, fontStyle = FontStyle.Italic)
             Spacer(modifier = Modifier.size(8.dp))
 
             Column(
-                verticalArrangement = Arrangement.spacedBy(2.5.dp)
+                 verticalArrangement = Arrangement.spacedBy(2.5.dp)
             ) {
                 for ((index, pair) in currentAlbumTracks.withIndex()) {
                     val castedPair = pair as? Pair<*, *>
@@ -357,7 +358,7 @@ fun TrackListCards(
         }
     } else {
         CircularProgressIndicator()
-        Text("Data is loading bruv.")
+        Text("Data is loading bruv.", fontStyle = FontStyle.Italic)
     }
 }
 

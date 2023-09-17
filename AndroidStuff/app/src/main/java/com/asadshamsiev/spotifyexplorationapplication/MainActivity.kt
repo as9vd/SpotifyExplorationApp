@@ -44,6 +44,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -276,7 +277,7 @@ class MainActivity : ComponentActivity() {
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     fun SearchBox(textFieldQuery: MutableState<String>) {
-        Text("Start a Session 🎁", fontWeight = FontWeight.Bold, fontSize = 22.sp)
+        Text("Start a Session", fontSize = 25.sp)
         TextField(
             value = textFieldQuery.value,
             placeholder = {
@@ -399,7 +400,7 @@ class MainActivity : ComponentActivity() {
                     setEnlargeTrigger(true)
 
                     coroutineScope.launch {
-                        delay(500)
+                        delay(250)
                         setEnlargeTrigger(false)
                     }
 
