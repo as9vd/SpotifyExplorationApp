@@ -49,6 +49,7 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role.Companion.Button
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -166,7 +167,6 @@ fun TrackCard(
                     modifier = Modifier.padding(4.dp)
                 )
             }
-
         }
     }
 }
@@ -278,7 +278,7 @@ fun ExploreAlbumButton(
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             for ((i, interval) in currentTrackIntervals.withIndex()) {
                 val blurModifier = if (i != currentIntervalIndex.value) {
-                     Modifier.blur(8.dp)
+                    Modifier.blur(8.dp)
                 } else {
                     Modifier
                 }
@@ -298,7 +298,9 @@ fun ExploreAlbumButton(
                         },
                         content = {
                             val duration = "${interval.first} - ${interval.second}"
-                            Text(duration, modifier = Modifier.padding(4.dp).then(it))
+                            Text(duration, modifier = Modifier
+                                .padding(4.dp)
+                                .then(it))
                         }
                     )
                 }
@@ -323,8 +325,6 @@ fun TrackListCards(
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Spacer(modifier = Modifier.size(8.dp))
-
             ExploreAlbumButton(
                 spotifyAppRemote = spotifyAppRemote!!,
                 currentAlbumTracks = currentAlbumTracks,
@@ -333,7 +333,7 @@ fun TrackListCards(
             )
 
             Spacer(modifier = Modifier.size(8.dp))
-            Text("Current Album: ${currAlbumName}", fontSize = 12.sp)
+            Text("Current Album: ${currAlbumName}", fontSize = 12.sp, fontWeight = FontWeight.Bold)
             Spacer(modifier = Modifier.size(8.dp))
 
             Column(
