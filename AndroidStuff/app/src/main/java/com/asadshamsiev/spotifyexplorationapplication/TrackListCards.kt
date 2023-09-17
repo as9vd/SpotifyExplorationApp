@@ -155,15 +155,18 @@ fun TrackCard(
             .fillMaxWidth()
     ) {
         Box(contentAlignment = Alignment.Center) {
-            Text(
-                "${track.trackNumber}. ${track.name} (${
-                    trackUtils.msToDuration(
-                        track.length
-                    )
-                })",
-                textAlign = TextAlign.Center,
-                modifier = Modifier.padding(4.dp)
-            )
+            Row {
+                Text(
+                    "${track.trackNumber}.",
+                    modifier = Modifier.padding(4.dp)
+                )
+                Text(
+                    "${track.name} (${trackUtils.msToDuration(track.length)})",
+                    textAlign = TextAlign.Start,
+                    modifier = Modifier.padding(4.dp)
+                )
+            }
+
         }
     }
 }
@@ -354,7 +357,7 @@ fun TrackListCards(
         }
     } else {
         CircularProgressIndicator()
-        Text("Data is loading, give it a second!")
+        Text("Data is loading bruv.")
     }
 }
 

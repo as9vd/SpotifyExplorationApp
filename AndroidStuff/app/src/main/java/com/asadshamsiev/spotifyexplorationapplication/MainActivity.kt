@@ -70,7 +70,6 @@ class MainActivity : ComponentActivity() {
 
     // This'll be for the search stuff (2).
     private var spotifyApiDead = mutableStateOf(false)
-
     private var failedToGetTracks = mutableStateOf(false)
 
     // This is what is used to check if music is currently playing, and if the track list should be shown.
@@ -313,8 +312,6 @@ class MainActivity : ComponentActivity() {
         } else {
             colourIndex.value += 1
         }
-
-        Log.d("ColourIndex", "${colourIndex.value}")
     }
 
     @Composable
