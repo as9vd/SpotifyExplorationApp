@@ -1,4 +1,4 @@
-package com.example.compose
+package com.asadshamsiev.spotifyexplorationapplication.ui.theme.blue
 import androidx.compose.ui.graphics.Color
 
 val md_theme_light_primary = Color(0xFF005FAC)
@@ -62,6 +62,5 @@ val md_theme_dark_shadow = Color(0xFF000000)
 val md_theme_dark_surfaceTint = Color(0xFFA4C9FF)
 val md_theme_dark_outlineVariant = Color(0xFF43474E)
 val md_theme_dark_scrim = Color(0xFF000000)
-
 
 val seed = Color(0xFF008AF5)

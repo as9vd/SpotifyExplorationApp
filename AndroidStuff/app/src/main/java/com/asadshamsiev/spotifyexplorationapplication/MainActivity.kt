@@ -36,8 +36,7 @@ import com.adamratzman.spotify.endpoints.pub.SearchApi
 import com.adamratzman.spotify.models.SimpleTrack
 import com.adamratzman.spotify.models.SpotifySearchResult
 import com.adamratzman.spotify.spotifyAppApi
-import com.asadshamsiev.spotifyexplorationapplication.ui.red.AppThemeRed
-import com.example.compose.AppThemeBlue
+import com.asadshamsiev.spotifyexplorationapplication.ui.theme.AppTheme
 import com.facebook.flipper.android.AndroidFlipperClient
 import com.facebook.flipper.android.utils.FlipperUtils
 import com.facebook.flipper.plugins.inspector.DescriptorMapping
@@ -57,8 +56,8 @@ const val clientSecret = "58f5caf8a73b439689b108824daf4c79"
 const val redirectUri = "com.asadshamsiev.spotifyexplorationapplication://callback"
 
 class MainActivity : ComponentActivity() {
-    // Change colours
-    private val colourChanged = mutableStateOf(false)
+    // For changing colours.
+    private val colourIndex = mutableStateOf(0)
 
     // Stuff used for parsing the length in ms.
     private val trackUtils: TrackUtils = TrackUtils()
@@ -221,24 +220,13 @@ class MainActivity : ComponentActivity() {
         }
 
         setContent {
-            if (colourChanged.value) {
-                AppThemeRed {
-                    MainScreen(
-                        spotifyApiDead.value,
-                        localSpotifyDead.value,
-                        albumUri.value,
-                        combinedSpotifyState.value
-                    )
-                }
-            } else {
-                AppThemeBlue {
-                    MainScreen(
-                        spotifyApiDead.value,
-                        localSpotifyDead.value,
-                        albumUri.value,
-                        combinedSpotifyState.value
-                    )
-                }
+            AppTheme(colourIndex = colourIndex.value) {
+                MainScreen(
+                    spotifyApiDead.value,
+                    localSpotifyDead.value,
+                    albumUri.value,
+                    combinedSpotifyState.value
+                )
             }
         }
     }
@@ -319,6 +307,16 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    private fun incrementColourButton() {
+        if (colourIndex.value == 5) {
+            colourIndex.value = 0
+        } else {
+            colourIndex.value += 1
+        }
+
+        Log.d("ColourIndex", "${colourIndex.value}")
+    }
+
     @Composable
     fun MainScreen(
         spotifyApiDead: Boolean,
@@ -373,7 +371,7 @@ class MainActivity : ComponentActivity() {
         ) {
             // These errors only show when the 1. local phone API is dead or 2. the public API is dead.
             Button(
-                onClick = {colourChanged.value = !colourChanged.value},
+                onClick = { incrementColourButton() },
                 border = BorderStroke(1.dp, Color.Black),
                 colors = ButtonDefaults.buttonColors(MaterialTheme.colorScheme.tertiary),
             ) {
