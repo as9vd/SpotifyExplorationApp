@@ -20,10 +20,16 @@ import androidx.compose.foundation.gestures.*
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.windowInsetsTopHeight
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
@@ -31,6 +37,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
@@ -48,6 +55,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.view.WindowCompat
 import androidx.lifecycle.lifecycleScope
 import com.adamratzman.spotify.SpotifyAppApi
 import com.adamratzman.spotify.endpoints.pub.SearchApi
@@ -146,7 +154,7 @@ class MainActivity : ComponentActivity() {
                             albumName.value = state.track.album.name
 
                             lifecycleScope.launch {
-                                Log.d("Name Changed", "NAME CHANGED YOU PAGAN!")
+                                Log.d("AlbumUri", "Album changed!")
                                 try {
                                     val album =
                                         publicSpotifyAppApi?.albums?.getAlbum(albumUri.value)
@@ -277,11 +285,11 @@ class MainActivity : ComponentActivity() {
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     fun SearchBox(textFieldQuery: MutableState<String>) {
-        Text("Start a Session", fontSize = 25.sp)
+        Text("🦧", fontSize = 28.sp, letterSpacing = 0.25.sp)
         TextField(
             value = textFieldQuery.value,
             placeholder = {
-                Text("Click to start typing!")
+                Text("Click to start typing!", fontSize = 18.sp)
             },
             onValueChange = {
                 textFieldQuery.value = it
@@ -388,8 +396,8 @@ class MainActivity : ComponentActivity() {
 
         Column(
             modifier = Modifier
-                .padding(all = 16.dp)
-                .fillMaxWidth()
+                .padding(start = 16.dp, end = 16.dp, top = 8.dp)
+                .fillMaxSize()
                 .verticalScroll(scrollState),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(12.dp)
@@ -441,6 +449,8 @@ class MainActivity : ComponentActivity() {
                     currentAlbumTracks = currentAlbumTracks,
                     changed = changed.value
                 )
+
+                Spacer(modifier = Modifier.size(8.dp))
             }
         }
     }

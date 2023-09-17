@@ -334,7 +334,7 @@ fun TrackListCards(
             )
 
             Spacer(modifier = Modifier.size(8.dp))
-            Text("${currAlbumName}", fontSize = 16.sp, fontWeight = FontWeight.Bold, fontStyle = FontStyle.Italic)
+            Text("${currAlbumName}", fontSize = 22.sp, letterSpacing = 0.25.sp)
             Spacer(modifier = Modifier.size(8.dp))
 
             Column(
