@@ -5,9 +5,15 @@ import android.os.Looper
 import android.util.Log
 import android.widget.Toast
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.Crossfade
 import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDp
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
@@ -51,6 +57,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role.Companion.Button
 import androidx.compose.ui.text.font.FontStyle
@@ -83,6 +90,16 @@ fun TrackCard(
         }
     }
 
+    val infiniteTransition = rememberInfiniteTransition()
+    val shake by infiniteTransition.animateFloat(
+        initialValue = -15f,
+        targetValue = 15f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(75, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        )
+    )
+
     Card(
         border = BorderStroke(1.5.dp, Color.Black),
         shape = RoundedCornerShape(0), modifier = Modifier
@@ -94,34 +111,38 @@ fun TrackCard(
             .fillMaxWidth()
     ) {
         Box(contentAlignment = Alignment.Center) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    "${track.trackNumber}.",
-                    modifier = Modifier
-                        .padding(8.dp)
-                        .weight(0.15f),
-                    textAlign = TextAlign.Center
-                )
+            Crossfade(targetState = isPlaying.value) { playing ->
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        "${track.trackNumber}.",
+                        modifier = Modifier
+                            .padding(8.dp)
+                            .weight(0.15f),
+                        textAlign = TextAlign.Center
+                    )
 
-                if (isPlaying.value) {
-                    Text(
-                        "VDSF ${track.name} (${trackUtils.msToDuration(track.length)})",
-                        textAlign = TextAlign.Start,
-                        modifier = Modifier
-                            .padding(8.dp)
-                            .weight(0.85f)
-                    )
-                } else {
-                    Text(
-                        "${track.name} (${trackUtils.msToDuration(track.length)})",
-                        textAlign = TextAlign.Start,
-                        modifier = Modifier
-                            .padding(8.dp)
-                            .weight(0.85f)
-                    )
+                    if (playing) {
+                        Text(
+                            "🦴",
+                            modifier = Modifier.graphicsLayer(rotationZ = shake)
+                        )
+                        Text(
+                            "${track.name} (${trackUtils.msToDuration(track.length)})",
+                            textAlign = TextAlign.Start,
+                            modifier = Modifier
+                                .padding(8.dp)
+                                .weight(0.85f)
+                        )
+                    } else {
+                        Text(
+                            "${track.name} (${trackUtils.msToDuration(track.length)})",
+                            textAlign = TextAlign.Start,
+                            modifier = Modifier
+                                .padding(8.dp)
+                                .weight(0.85f)
+                        )
+                    }
                 }
-
-
             }
         }
     }
