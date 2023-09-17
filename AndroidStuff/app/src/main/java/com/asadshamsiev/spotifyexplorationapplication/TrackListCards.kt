@@ -29,15 +29,19 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Face
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ButtonElevation
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -66,85 +70,16 @@ fun TrackCard(
     active: Boolean
 ) {
     val context = LocalContext.current
+    val isPlaying = remember { mutableStateOf(false) }
 
-    val intervals = remember { trackUtils.sampleSong(track.length) }
-    var currentIndex = remember { mutableStateOf(0) }
-    var currentInterval = remember { mutableStateOf(intervals[currentIndex.value]) }
-
-    val handler = rememberUpdatedState(Handler(Looper.getMainLooper()))
-    val checkProgressRunnable = object : Runnable {
-        override fun run() {
-            spotifyAppRemote?.playerApi?.playerState?.setResultCallback { state ->
-                val currentPosition = state.playbackPosition
-                val endForCurrentInterval: Long =
-                    trackUtils.durationToMs(currentInterval.value.second)
-
-                if (currentPosition >= endForCurrentInterval) {
-                    currentIndex.value++
-
-                    // If there's another interval to be played, move on and play it.
-                    if (currentIndex.value < intervals.size) {
-                        currentInterval.value = intervals[currentIndex.value]
-                        val startOfNextInterval: Long =
-                            trackUtils.durationToMs(currentInterval.value.first)
-
-                        spotifyAppRemote.playerApi.seekTo(startOfNextInterval)
-                    } else { // Otherwise, pause and crack on.
-                        spotifyAppRemote.playerApi.pause()
-                        handler.value.removeCallbacks(this)
-                        return@setResultCallback
-                    }
+    LaunchedEffect(Unit) {
+        spotifyAppRemote?.playerApi?.subscribeToPlayerState()?.setEventCallback { state ->
+            isPlaying.value =
+                if (state.track.uri == track.uri.uri) {
+                    true
+                } else {
+                    false
                 }
-
-                handler.value.postDelayed(this, 500) // Every half second.
-            }
-        }
-    }
-
-    val onClick: () -> Unit = {
-        spotifyAppRemote?.playerApi?.play(track.uri.uri)?.apply {
-            setResultCallback {
-                // Introducing a delay of 1 second before executing the seek action.
-                handler.value.postDelayed({
-                    spotifyAppRemote.playerApi.seekToRelativePosition(
-                        trackUtils.durationToMs(
-                            currentInterval.value.first
-                        )
-                    )?.setResultCallback {
-                        Log.d("PositionSought", "Position successfully sought mate (I think?).")
-                    }?.setErrorCallback { throwable ->
-                        Log.e("SeekError", "Error seeking position: ${throwable.message}")
-                        Toast.makeText(
-                            context,
-                            "Position wasn't successfully sought you tinker.",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    }
-                }, 1000) // Delay of 1 second.
-
-                handler.value.post(checkProgressRunnable) // Check progress as it cracks on mate.
-
-                var sum: Long = 0
-                for (interval in intervals) {
-                    sum += trackUtils.durationToMs(interval.second) - trackUtils.durationToMs(
-                        interval.first
-                    )
-                }
-
-                val statement =
-                    "${intervals.toString()} " +
-                            "${trackUtils.msToDuration(track.length)} " +
-                            "${((((sum.toDouble() / (track.length.toLong())) * 100) * 100) / 100).toFloat()}%"
-
-                Toast.makeText(
-                    context,
-                    statement,
-                    Toast.LENGTH_LONG
-                ).show()
-            }
-            setErrorCallback { throwable ->
-                Log.e("PlayError", "Error playing track: ${throwable.message}")
-            }
         }
     }
 
@@ -152,7 +87,9 @@ fun TrackCard(
         border = BorderStroke(1.5.dp, Color.Black),
         shape = RoundedCornerShape(0), modifier = Modifier
             .clickable {
-                onClick()
+                Toast
+                    .makeText(context, "Tee-hee!", Toast.LENGTH_SHORT)
+                    .show()
             }
             .fillMaxWidth()
     ) {
@@ -160,14 +97,31 @@ fun TrackCard(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     "${track.trackNumber}.",
-                    modifier = Modifier.padding(8.dp).weight(0.15f),
+                    modifier = Modifier
+                        .padding(8.dp)
+                        .weight(0.15f),
                     textAlign = TextAlign.Center
                 )
-                Text(
-                    "${track.name} (${trackUtils.msToDuration(track.length)})",
-                    textAlign = TextAlign.Start,
-                    modifier = Modifier.padding(8.dp).weight(0.85f)
-                )
+
+                if (isPlaying.value) {
+                    Text(
+                        "VDSF ${track.name} (${trackUtils.msToDuration(track.length)})",
+                        textAlign = TextAlign.Start,
+                        modifier = Modifier
+                            .padding(8.dp)
+                            .weight(0.85f)
+                    )
+                } else {
+                    Text(
+                        "${track.name} (${trackUtils.msToDuration(track.length)})",
+                        textAlign = TextAlign.Start,
+                        modifier = Modifier
+                            .padding(8.dp)
+                            .weight(0.85f)
+                    )
+                }
+
+
             }
         }
     }
@@ -300,9 +254,11 @@ fun ExploreAlbumButton(
                         },
                         content = {
                             val duration = "${interval.first} - ${interval.second}"
-                            Text(duration, modifier = Modifier
-                                .padding(4.dp)
-                                .then(it))
+                            Text(
+                                duration, modifier = Modifier
+                                    .padding(4.dp)
+                                    .then(it)
+                            )
                         }
                     )
                 }
@@ -335,11 +291,9 @@ fun TrackListCards(
             )
 
             Spacer(modifier = Modifier.size(8.dp))
-            Text("${currAlbumName}", fontSize = 22.sp, letterSpacing = 0.25.sp)
-            Spacer(modifier = Modifier.size(8.dp))
 
             Column(
-                 verticalArrangement = Arrangement.spacedBy(2.5.dp)
+                verticalArrangement = Arrangement.spacedBy(2.dp)
             ) {
                 for ((index, pair) in currentAlbumTracks.withIndex()) {
                     val castedPair = pair as? Pair<*, *>
