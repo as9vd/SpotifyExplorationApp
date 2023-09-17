@@ -157,15 +157,16 @@ fun TrackCard(
             .fillMaxWidth()
     ) {
         Box(contentAlignment = Alignment.Center) {
-            Row {
+            Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     "${track.trackNumber}.",
-                    modifier = Modifier.padding(8.dp)
+                    modifier = Modifier.padding(8.dp).weight(0.15f),
+                    textAlign = TextAlign.Center
                 )
                 Text(
                     "${track.name} (${trackUtils.msToDuration(track.length)})",
                     textAlign = TextAlign.Start,
-                    modifier = Modifier.padding(8.dp)
+                    modifier = Modifier.padding(8.dp).weight(0.85f)
                 )
             }
         }

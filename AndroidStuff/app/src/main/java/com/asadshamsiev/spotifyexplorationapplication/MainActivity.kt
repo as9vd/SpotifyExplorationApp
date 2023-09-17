@@ -16,8 +16,10 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.*
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
@@ -51,6 +53,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -285,7 +288,34 @@ class MainActivity : ComponentActivity() {
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     fun SearchBox(textFieldQuery: MutableState<String>) {
-        Text("🦧", fontSize = 28.sp, letterSpacing = 0.25.sp)
+        val coroutineScope = rememberCoroutineScope()
+
+        val (enlargeTrigger, setEnlargeTrigger) = remember { mutableStateOf(false) }
+        val scale: Float by animateFloatAsState(
+            targetValue = if (enlargeTrigger) 1.25f else 1f, // 1.1x when enlarged, 1x for normal.
+            animationSpec = spring(
+                dampingRatio = Spring.DampingRatioLowBouncy,
+                stiffness = Spring.StiffnessVeryLow
+            )
+        )
+
+        Text(
+            "🦧", fontSize = 28.sp, letterSpacing = 0.25.sp, modifier = Modifier
+                .pointerInput(Unit) {
+                    detectTapGestures(
+                        onPress = { _ ->
+                            tryAwaitRelease()
+                            setEnlargeTrigger(true)
+                            coroutineScope.launch {
+                                delay(750)
+                                setEnlargeTrigger(false)
+                            }
+                            incrementColourButton()
+                        }
+                    )
+                }
+                .graphicsLayer(scaleX = scale, scaleY = scale)
+        )
         TextField(
             value = textFieldQuery.value,
             placeholder = {
@@ -351,16 +381,6 @@ class MainActivity : ComponentActivity() {
         val foundStuff = remember { mutableListOf<List<String>>() }
         val isLoading = remember { mutableStateOf(false) }
         val scrollState = rememberScrollState()
-        val coroutineScope = rememberCoroutineScope()
-
-        val (enlargeTrigger, setEnlargeTrigger) = remember { mutableStateOf(false) }
-        val scale: Float by animateFloatAsState(
-            targetValue = if (enlargeTrigger) 1.1f else 1f, // 1.1x when enlarged, 1x for normal.
-            animationSpec = spring(
-                dampingRatio = Spring.DampingRatioLowBouncy,
-                stiffness = Spring.StiffnessVeryLow
-            )
-        )
 
         // Whenever the query gets updated.
         LaunchedEffect(textFieldQuery.value) {
@@ -396,34 +416,17 @@ class MainActivity : ComponentActivity() {
 
         Column(
             modifier = Modifier
-                .padding(start = 16.dp, end = 16.dp, top = 8.dp)
+                .padding(start = 16.dp, end = 16.dp)
                 .fillMaxSize()
                 .verticalScroll(scrollState),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // These errors only show when the 1. local phone API is dead or 2. the public API is dead.
-            Button(
-                onClick = {
-                    setEnlargeTrigger(true)
+            Spacer(modifier = Modifier.size(8.dp))
 
-                    coroutineScope.launch {
-                        delay(250)
-                        setEnlargeTrigger(false)
-                    }
-
-                    incrementColourButton()
-                },
-                border = BorderStroke(1.dp, Color.Black),
-                colors = ButtonDefaults.buttonColors(MaterialTheme.colorScheme.tertiary),
-                modifier = Modifier
-                    .padding(0.dp)
-                    .graphicsLayer(scaleX = scale, scaleY = scale),
-                contentPadding = PaddingValues(0.dp)
-            ) {
-                Text(text = "👺", fontSize = 14.sp, modifier = Modifier.padding(0.dp))
-            }
-
+            // These errors only show when the
+            // 1. local phone API is dead or
+            // 2. the public API is dead.
             SearchConditionalErrors(
                 spotifyApiDead = spotifyApiDead,
                 localSpotifyDead = localSpotifyDead
@@ -453,5 +456,6 @@ class MainActivity : ComponentActivity() {
                 Spacer(modifier = Modifier.size(8.dp))
             }
         }
+
     }
 }
