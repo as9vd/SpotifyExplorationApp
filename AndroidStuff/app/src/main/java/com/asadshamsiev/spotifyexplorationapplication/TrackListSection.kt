@@ -37,6 +37,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -65,6 +66,7 @@ fun TrackListSection(
     val currentAlbumTracks: ArrayList<Pair<ArrayList<Pair<String, String>>, SimpleTrack>> =
         viewModel.currentAlbumTracks.collectAsState().value
     val tracksInit = currentAlbumTracks.isNotEmpty()
+    val exploreSessionStarted = remember { mutableStateOf(false) }
 
     if (tracksInit) {
         Column(
@@ -75,7 +77,8 @@ fun TrackListSection(
             // This button is the thing that actually starts the sampling.
             ExploreAlbumButton(
                 spotifyAppRemote = spotifyAppRemote,
-                currentAlbumTracks = currentAlbumTracks
+                currentAlbumTracks = currentAlbumTracks,
+                exploreSessionStarted = exploreSessionStarted
             )
 
             Spacer(modifier = Modifier.size(8.dp))
@@ -91,6 +94,7 @@ fun TrackListSection(
 
                     if (track is SimpleTrack) {
                         TrackCard(
+                            exploreSessionStarted = exploreSessionStarted,
                             spotifyAppRemote = spotifyAppRemote,
                             track = track
                         )
@@ -108,16 +112,15 @@ fun TrackListSection(
     Spacer(modifier = Modifier.size(8.dp)) // A little space on the bottom.
 }
 
-// As of now, there's no cool onClick effect.
-// It doesn't play the song. Although it should.
 @Composable
 fun TrackCard(
+    exploreSessionStarted: MutableState<Boolean>,
     spotifyAppRemote: SpotifyAppRemote? = null,
     track: SimpleTrack
 ) {
     val isPlaying = remember { mutableStateOf(false) }
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(track) {
         spotifyAppRemote?.playerApi?.subscribeToPlayerState()?.setEventCallback { state ->
             isPlaying.value = (state.track.uri == track.uri.uri)
         }
@@ -133,11 +136,32 @@ fun TrackCard(
         ), label = "Harlem Shake"
     )
 
+    val screwed = remember { mutableStateOf(false) }
+    val context = LocalContext.current
+
     Card(
         border = BorderStroke(1.5.dp, Color.Black),
         shape = RoundedCornerShape(0), modifier = Modifier
             .clickable {
-                // no-op, as of right now.
+                Toast
+                    .makeText(
+                        context,
+                        "Clicking a button will cause the explore session to end",
+                        Toast.LENGTH_SHORT
+                    )
+                    .show()
+
+                try {
+                    spotifyAppRemote?.playerApi?.play(track.uri.uri)
+                    screwed.value = false
+                } catch (e: Exception) {
+                    Log.d("onClick", "Can't play specified song: $e")
+                    screwed.value = true
+                }
+
+                // Clicking a track will interrupt an explore session.
+                // Even if the remote API can't call it. Makes no difference. It will be false.
+                exploreSessionStarted.value = false
             }
             .fillMaxWidth()
     ) {
@@ -183,9 +207,9 @@ fun TrackCard(
 @Composable
 fun ExploreAlbumButton(
     spotifyAppRemote: SpotifyAppRemote?,
-    currentAlbumTracks: ArrayList<Pair<ArrayList<Pair<String, String>>, SimpleTrack>>
+    currentAlbumTracks: ArrayList<Pair<ArrayList<Pair<String, String>>, SimpleTrack>>,
+    exploreSessionStarted: MutableState<Boolean>
 ) {
-    val buttonClicked = remember { mutableStateOf(false) }
     val currentTrackIndex = remember { mutableStateOf(0) }
     val currentIntervalIndex = remember { mutableStateOf(0) }
 
@@ -198,7 +222,8 @@ fun ExploreAlbumButton(
                 try {
                     spotifyAppRemote.playerApi.playerState?.setResultCallback { state ->
                         val currentPosition = state.playbackPosition
-                        val currentTrackIntervals = currentAlbumTracks[currentTrackIndex.value].first
+                        val currentTrackIntervals =
+                            currentAlbumTracks[currentTrackIndex.value].first
 
                         val currentInterval = currentTrackIntervals[currentIntervalIndex.value]
                         val endOfCurrentInterval: Long =
@@ -241,7 +266,7 @@ fun ExploreAlbumButton(
                         handler.value.postDelayed(this, 1000)
                         screwed.value = false
                     }
-                } catch(e: Exception) {
+                } catch (e: Exception) {
                     Log.d("checkProgressRunnable", "checkProgressRunnable failed: $e")
                     screwed.value = true
                 }
@@ -257,7 +282,7 @@ fun ExploreAlbumButton(
 
     val onClick: () -> Unit = {
         val remoteApiConnected = (spotifyAppRemote != null && spotifyAppRemote.isConnected)
-        if (!buttonClicked.value && remoteApiConnected) {
+        if (!exploreSessionStarted.value && remoteApiConnected) {
             spotifyAppRemote!!.playerApi.play(currentAlbumTracks[currentTrackIndex.value].second.uri.uri)
                 ?.apply {
                     val initialInterval = currentAlbumTracks[currentTrackIndex.value].first[0]
@@ -273,6 +298,7 @@ fun ExploreAlbumButton(
             screwed.value = false
         } else if (remoteApiConnected) {
             spotifyAppRemote?.playerApi?.pause()
+            // TODO: Fix this so the skipping stuff stops when no longer in exploration mode.
             handler.value.removeCallbacks(checkProgressRunnable)
 
             screwed.value = false
@@ -282,12 +308,12 @@ fun ExploreAlbumButton(
             screwed.value = true
         }
 
-        buttonClicked.value = !buttonClicked.value
+        exploreSessionStarted.value = !exploreSessionStarted.value
     }
 
     val currentTrackIntervals = currentAlbumTracks[currentTrackIndex.value].first
 
-    if (!buttonClicked.value) {
+    if (!exploreSessionStarted.value) {
         Button(
             elevation = ButtonDefaults.elevatedButtonElevation(),
             border = BorderStroke(1.dp, Color.Black),
@@ -305,6 +331,8 @@ fun ExploreAlbumButton(
         }
 
         Spacer(modifier = Modifier.size(8.dp))
+
+        // Give it a little crossfade so it doesn't abruptly enter/leave.
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             // For each interval we've got for the song (3 as of now), create a card for it.
             for ((i, interval) in currentTrackIntervals.withIndex()) {
