@@ -69,7 +69,7 @@ class MainActivity : ComponentActivity() {
     private var spotifyAppRemote: SpotifyAppRemote? = null
     private var publicSpotifyAppApi: SpotifyAppApi? = null
 
-    private lateinit var viewModel: MainScreenViewModel
+    private lateinit var mainScreenViewModel: MainScreenViewModel
 
     override fun onStart() {
         super.onStart()
@@ -86,8 +86,8 @@ class MainActivity : ComponentActivity() {
                 Log.d("SpotifyStuff", "Connected! Finally.")
                 spotifyAppRemote = appRemote
                 spotifyAppRemote?.playerApi?.subscribeToPlayerState()?.setEventCallback { state ->
-                    val isSongNew: Boolean = viewModel.trackUri.value != state.track.uri
-                    val isAlbumNew = viewModel.albumUri.value != state.track.album.uri
+                    val isSongNew: Boolean = mainScreenViewModel.trackUri.value != state.track.uri
+                    val isAlbumNew = mainScreenViewModel.albumUri.value != state.track.album.uri
 
                     if (isSongNew) {
                         run { // 1. Change song state (if changed).
@@ -105,107 +105,13 @@ class MainActivity : ComponentActivity() {
 
             override fun onFailure(throwable: Throwable) {
                 Log.e("SpotifyStuff", throwable.message, throwable)
-                viewModel.setLocalSpotifyDeadState(true)
+                mainScreenViewModel.setLocalSpotifyDeadState(true)
             }
         })
 
         // 2. Connect the Spotify API that'll call the public search shit.
         lifecycleScope.launch {
             buildSpotifyPublicApi()
-        }
-    }
-
-    private suspend fun buildSpotifyPublicApi() {
-        try {
-            publicSpotifyAppApi =
-                spotifyAppApi(clientId = clientId, clientSecret = clientSecret).build(
-                    enableDefaultTokenRefreshProducerIfNoneExists = true
-                )
-        } catch (e: Exception) {
-            Log.e("SpotifyApiError", "Failed to build Spotify public API.", e)
-            viewModel.setSpotifyApiDeadState(true)
-        }
-    }
-
-    private fun handleSongChange(state: PlayerState) {
-        val currentTrackUri: String = viewModel.trackUri.value
-
-        Log.d("TrackUri", "Current TrackUri: ${currentTrackUri}")
-        Log.d("TrackUri", "State TrackUri: ${state.track.uri}")
-
-        viewModel.setTrackUri(state.track.uri)
-        viewModel.setTrackName(state.track.name)
-    }
-
-    private fun handleAlbumChange(state: PlayerState) {
-        viewModel.setAlbumUri(state.track.album.uri)
-        viewModel.setAlbumName(state.track.album.name)
-
-        lifecycleScope.launch {
-            Log.d("AlbumUri", "Album changed!")
-            try {
-                val currAlbumUri: String = viewModel.albumUri.value
-                val album =
-                    publicSpotifyAppApi?.albums?.getAlbum(currAlbumUri)
-                val isValidAlbum: Boolean = (album?.tracks != null)
-
-                if (isValidAlbum) {
-                    val updatedAlbumTracks =
-                        arrayListOf<Pair<ArrayList<Pair<String, String>>, SimpleTrack>>()
-
-                    for (track in album!!.tracks) {
-                        val trackLength: Int = track.length
-                        updatedAlbumTracks.add(
-                            Pair(
-                                TrackUtils.sampleSong(
-                                    trackLength
-                                ), track
-                            )
-                        )
-                    }
-
-                    // Might be redundant?
-                    if (viewModel.currentAlbumTracks.value == updatedAlbumTracks) {
-                        return@launch
-                    }
-
-                    viewModel.setCurrentAlbumTracks(updatedAlbumTracks)
-                    viewModel.setCombinedSpotifyState(
-                        SpotifyState(
-                            state.track.album.name,
-                            updatedAlbumTracks
-                        )
-                    )
-                    viewModel.setFailedToGetTracks(false)
-                }
-            } catch (e: Exception) {
-                Log.d(
-                    "CurrentAlbumTracks",
-                    "Failed to get album tracks: ${e}"
-                )
-                viewModel.setFailedToGetTracks(true)
-            }
-        }
-    }
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-
-        // 1. Connect flipper.
-        connectFlipper()
-
-        // 2. Load the ViewModel.
-        viewModel = ViewModelProvider(this).get(MainScreenViewModel::class.java)
-
-        // 3. Populate the Compose stuff.
-        setContent {
-            AppTheme(colourIndex = viewModel.colourIndex.value) {
-                MainScreen(
-                    viewModel = viewModel,
-                    spotifyAppRemote = spotifyAppRemote,
-                    publicSpotifyAppApi = publicSpotifyAppApi
-                )
-            }
         }
     }
 
@@ -220,6 +126,104 @@ class MainActivity : ComponentActivity() {
                 )
             )
             client.start()
+        }
+    }
+
+    private suspend fun buildSpotifyPublicApi() {
+        try {
+            publicSpotifyAppApi =
+                spotifyAppApi(clientId = clientId, clientSecret = clientSecret).build(
+                    enableDefaultTokenRefreshProducerIfNoneExists = true
+                )
+        } catch (e: Exception) {
+            Log.e("SpotifyApiError", "Failed to build Spotify public API.", e)
+            mainScreenViewModel.setSpotifyApiDeadState(true)
+        }
+    }
+
+    private fun handleSongChange(state: PlayerState) {
+        val currentTrackUri: String = mainScreenViewModel.trackUri.value
+
+        Log.d("TrackUri", "Current TrackUri: ${currentTrackUri}")
+        Log.d("TrackUri", "State TrackUri: ${state.track.uri}")
+
+        mainScreenViewModel.setTrackUri(state.track.uri)
+        mainScreenViewModel.setTrackName(state.track.name)
+    }
+
+    private fun handleAlbumChange(state: PlayerState) {
+        mainScreenViewModel.setAlbumUri(state.track.album.uri)
+        mainScreenViewModel.setAlbumName(state.track.album.name)
+
+        lifecycleScope.launch {
+            Log.d("AlbumUri", "Album changed!")
+            try {
+                val currAlbumUri: String = mainScreenViewModel.albumUri.value
+                val album =
+                    publicSpotifyAppApi?.albums?.getAlbum(currAlbumUri)
+                val isValidAlbum: Boolean = (album?.tracks != null)
+
+                if (isValidAlbum) {
+                    // Pair: (List of track's durations, track).
+                    val updatedAlbumTracks =
+                        arrayListOf<Pair<
+                                ArrayList<Pair<String, String>
+                                         >,
+                                SimpleTrack>>()
+
+                    for (track in album!!.tracks) {
+                        val trackLength: Int = track.length
+                        updatedAlbumTracks.add(
+                            Pair(
+                                TrackUtils.sampleSong(
+                                    trackLength
+                                ), track
+                            )
+                        )
+                    }
+
+                    // Might be redundant?
+                    if (mainScreenViewModel.currentAlbumTracks.value == updatedAlbumTracks) {
+                        return@launch
+                    }
+
+                    mainScreenViewModel.setCurrentAlbumTracks(updatedAlbumTracks)
+                    mainScreenViewModel.setCombinedSpotifyState(
+                        SpotifyState(
+                            state.track.album.name,
+                            updatedAlbumTracks
+                        )
+                    )
+                    mainScreenViewModel.setFailedToGetTracks(false)
+                }
+            } catch (e: Exception) {
+                Log.d(
+                    "CurrentAlbumTracks",
+                    "Failed to get album tracks: ${e}"
+                )
+                mainScreenViewModel.setFailedToGetTracks(true)
+            }
+        }
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        // 1. Connect flipper.
+        connectFlipper()
+
+        // 2. Load the ViewModel.
+        mainScreenViewModel = ViewModelProvider(this).get(MainScreenViewModel::class.java)
+
+        // 3. Populate the Compose stuff.
+        setContent {
+            AppTheme(colourIndex = mainScreenViewModel.colourIndex.value) {
+                MainScreen(
+                    viewModel = mainScreenViewModel,
+                    spotifyAppRemote = spotifyAppRemote,
+                    publicSpotifyAppApi = publicSpotifyAppApi
+                )
+            }
         }
     }
 }

@@ -72,7 +72,7 @@ fun TrackListSection(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             ExploreAlbumButton(
-                spotifyAppRemote = spotifyAppRemote!!,
+                spotifyAppRemote = spotifyAppRemote,
                 currentAlbumTracks = currentAlbumTracks
             )
 
@@ -179,7 +179,7 @@ fun TrackCard(
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
 fun ExploreAlbumButton(
-    spotifyAppRemote: SpotifyAppRemote,
+    spotifyAppRemote: SpotifyAppRemote?,
     currentAlbumTracks: ArrayList<Pair<ArrayList<Pair<String, String>>, SimpleTrack>>
 ) {
     val buttonClicked = remember { mutableStateOf(false) }
@@ -190,52 +190,54 @@ fun ExploreAlbumButton(
 
     val checkProgressRunnable = object : Runnable {
         override fun run() {
-            spotifyAppRemote.playerApi.playerState?.setResultCallback { state ->
-                val currentPosition = state.playbackPosition
-                val currentTrackIntervals = currentAlbumTracks[currentTrackIndex.value].first
+            if (spotifyAppRemote != null) {
+                spotifyAppRemote.playerApi.playerState?.setResultCallback { state ->
+                    val currentPosition = state.playbackPosition
+                    val currentTrackIntervals = currentAlbumTracks[currentTrackIndex.value].first
 
-                val currentInterval = currentTrackIntervals[currentIntervalIndex.value]
-                val endOfCurrentInterval: Long = TrackUtils.durationToMs((currentInterval.second))
+                    val currentInterval = currentTrackIntervals[currentIntervalIndex.value]
+                    val endOfCurrentInterval: Long = TrackUtils.durationToMs((currentInterval.second))
 
-                if (currentPosition >= endOfCurrentInterval) {
-                    currentIntervalIndex.value++
+                    if (currentPosition >= endOfCurrentInterval) {
+                        currentIntervalIndex.value++
 
-                    // If there's another interval to be played for this song, then play it.
-                    if (currentIntervalIndex.value < currentTrackIntervals.size) {
-                        val nextInterval = currentTrackIntervals[currentIntervalIndex.value]
-                        val startOfNextInterval: Long = TrackUtils.durationToMs(nextInterval.first)
+                        // If there's another interval to be played for this song, then play it.
+                        if (currentIntervalIndex.value < currentTrackIntervals.size) {
+                            val nextInterval = currentTrackIntervals[currentIntervalIndex.value]
+                            val startOfNextInterval: Long = TrackUtils.durationToMs(nextInterval.first)
 
-                        spotifyAppRemote.playerApi.seekTo(startOfNextInterval)
-                    } else {
-                        // Otherwise, move on to the next song and reset the interval index.
-                        currentTrackIndex.value++
-                        currentIntervalIndex.value = 0
-
-                        if (currentTrackIndex.value < currentAlbumTracks.size) {
-                            spotifyAppRemote.playerApi.play(currentAlbumTracks[currentTrackIndex.value].second.uri.uri)
-
-                            val initialInterval =
-                                currentAlbumTracks[currentTrackIndex.value].first[0]
-                            val startOfFirstInterval: Long =
-                                TrackUtils.durationToMs(initialInterval.first)
-
-                            handler.value.postDelayed({
-                                spotifyAppRemote.playerApi.seekTo(startOfFirstInterval)
-                            }, 1000)
+                            spotifyAppRemote.playerApi.seekTo(startOfNextInterval)
                         } else {
-                            spotifyAppRemote.playerApi.pause()
-                            handler.value.removeCallbacks(this)
-                            return@setResultCallback
+                            // Otherwise, move on to the next song and reset the interval index.
+                            currentTrackIndex.value++
+                            currentIntervalIndex.value = 0
+
+                            if (currentTrackIndex.value < currentAlbumTracks.size) {
+                                spotifyAppRemote.playerApi.play(currentAlbumTracks[currentTrackIndex.value].second.uri.uri)
+
+                                val initialInterval =
+                                    currentAlbumTracks[currentTrackIndex.value].first[0]
+                                val startOfFirstInterval: Long =
+                                    TrackUtils.durationToMs(initialInterval.first)
+
+                                handler.value.postDelayed({
+                                    spotifyAppRemote.playerApi.seekTo(startOfFirstInterval)
+                                }, 1000)
+                            } else {
+                                spotifyAppRemote.playerApi.pause()
+                                handler.value.removeCallbacks(this)
+                                return@setResultCallback
+                            }
                         }
                     }
+                    handler.value.postDelayed(this, 1000)
                 }
-                handler.value.postDelayed(this, 1000)
             }
         }
     }
 
     val onClick: () -> Unit = {
-        if (!buttonClicked.value) {
+        if (!buttonClicked.value && spotifyAppRemote != null) {
             spotifyAppRemote.playerApi.play(currentAlbumTracks[currentTrackIndex.value].second.uri.uri)
                 ?.apply {
                     val initialInterval = currentAlbumTracks[currentTrackIndex.value].first[0]
@@ -248,7 +250,9 @@ fun ExploreAlbumButton(
                     handler.value.post(checkProgressRunnable)
                 }
         } else {
-            spotifyAppRemote.playerApi.pause()
+            if (spotifyAppRemote != null) {
+                spotifyAppRemote.playerApi.pause()
+            }
             handler.value.removeCallbacks(checkProgressRunnable)
         }
 
