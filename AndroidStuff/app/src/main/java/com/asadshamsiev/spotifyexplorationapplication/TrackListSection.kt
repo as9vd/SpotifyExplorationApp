@@ -68,6 +68,9 @@ fun TrackListSection(
     val tracksInit = currentAlbumTracks.isNotEmpty()
     val exploreSessionStarted = remember { mutableStateOf(false) }
 
+    val currentTrackIndex = remember { mutableStateOf(0) }
+    val currentIntervalIndex = remember { mutableStateOf(0) }
+
     if (tracksInit) {
         Column(
             modifier = Modifier.fillMaxSize(),
@@ -76,9 +79,11 @@ fun TrackListSection(
         ) {
             // This button is the thing that actually starts the sampling.
             ExploreAlbumButton(
-                spotifyAppRemote = spotifyAppRemote,
                 currentAlbumTracks = currentAlbumTracks,
-                exploreSessionStarted = exploreSessionStarted
+                currentIntervalIndex = currentIntervalIndex,
+                currentTrackIndex = currentTrackIndex,
+                exploreSessionStarted = exploreSessionStarted,
+                spotifyAppRemote = spotifyAppRemote
             )
 
             Spacer(modifier = Modifier.size(8.dp))
@@ -94,6 +99,8 @@ fun TrackListSection(
 
                     if (track is SimpleTrack) {
                         TrackCard(
+                            currentIntervalIndex = currentIntervalIndex,
+                            currentTrackIndex = currentTrackIndex,
                             exploreSessionStarted = exploreSessionStarted,
                             spotifyAppRemote = spotifyAppRemote,
                             track = track
@@ -114,6 +121,8 @@ fun TrackListSection(
 
 @Composable
 fun TrackCard(
+    currentIntervalIndex: MutableState<Int>,
+    currentTrackIndex: MutableState<Int>,
     exploreSessionStarted: MutableState<Boolean>,
     spotifyAppRemote: SpotifyAppRemote? = null,
     track: SimpleTrack
@@ -162,6 +171,7 @@ fun TrackCard(
                 // Clicking a track will interrupt an explore session.
                 // Even if the remote API can't call it. Makes no difference. It will be false.
                 exploreSessionStarted.value = false
+                resetTrackRelatedIndices(currentTrackIndex, currentIntervalIndex)
             }
             .fillMaxWidth()
     ) {
@@ -212,11 +222,10 @@ fun TrackCard(
 fun ExploreAlbumButton(
     spotifyAppRemote: SpotifyAppRemote?,
     currentAlbumTracks: ArrayList<Pair<ArrayList<Pair<String, String>>, SimpleTrack>>,
-    exploreSessionStarted: MutableState<Boolean>
+    exploreSessionStarted: MutableState<Boolean>,
+    currentTrackIndex: MutableState<Int>,
+    currentIntervalIndex: MutableState<Int>
 ) {
-    val currentTrackIndex = remember { mutableStateOf(0) }
-    val currentIntervalIndex = remember { mutableStateOf(0) }
-
     val handler = rememberUpdatedState(Handler(Looper.getMainLooper()))
     val screwed = remember { mutableStateOf(false) }
 
@@ -325,6 +334,7 @@ fun ExploreAlbumButton(
         if (!exploreSessionStarted.value) {
             try {
                 handler.value.removeCallbacks(checkProgressRunnable)
+                resetTrackRelatedIndices(currentTrackIndex, currentIntervalIndex)
             } catch (e: Exception) {
                 Log.d("removeCallbacks", "Callback unsuccessfully removed: $e")
             }
@@ -393,4 +403,12 @@ fun ExploreAlbumButton(
             }
         }
     }
+}
+
+private fun resetTrackRelatedIndices(
+    currentTrackIndex: MutableState<Int>,
+    currentIntervalIndex: MutableState<Int>
+) {
+    currentTrackIndex.value = 0
+    currentIntervalIndex.value = 0
 }
