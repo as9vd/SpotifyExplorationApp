@@ -56,6 +56,7 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.adamratzman.spotify.models.SimpleTrack
 import com.asadshamsiev.spotifyexplorationapplication.utils.TrackUtils
 import com.asadshamsiev.spotifyexplorationapplication.viewmodels.MainScreenViewModel
@@ -91,14 +92,13 @@ fun TrackListSection(
             )
 
             Spacer(modifier = Modifier.size(8.dp))
-
-            Box(Modifier.border(BorderStroke(1.5.dp, Color.Black))) {
+            Box(Modifier.border(BorderStroke(1.dp, Color.Black))) {
                 Column {
                     // Need one of these at the top.
                     Divider(
                         color = Color.Black,
                         modifier = Modifier
-                            .height(1.5.dp)
+                            .height(1.dp)
                             .fillMaxWidth()
                     )
                     for (pair in currentAlbumTracks) {
@@ -120,13 +120,14 @@ fun TrackListSection(
                             Divider(
                                 color = Color.Black,
                                 modifier = Modifier
-                                    .height(1.5.dp)
+                                    .height(1.dp)
                                     .fillMaxWidth()
                             )
                         }
                     }
                 }
             }
+            Spacer(modifier = Modifier.size(8.dp))
         }
     } else {
         // I'll need something here for when it's a A) podcast
