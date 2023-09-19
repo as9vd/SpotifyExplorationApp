@@ -257,9 +257,14 @@ fun ExploreAlbumButton(
                                     val startOfFirstInterval: Long =
                                         TrackUtils.durationToMs(initialInterval.first)
 
-                                    handler.value.postDelayed({
-                                        spotifyAppRemote.playerApi.seekTo(startOfFirstInterval)
-                                    }, 1000)
+                                    // Hot-fix. This shouldn't need to be here, cause I remove
+                                    // the callable's, but it does, for some reason.
+                                    // Need to read more about the internals on this.
+                                    if (exploreSessionStarted.value) {
+                                        handler.value.postDelayed({
+                                            spotifyAppRemote.playerApi.seekTo(startOfFirstInterval)
+                                        }, 500)
+                                    }
                                 } else {
                                     spotifyAppRemote.playerApi.pause()
                                     handler.value.removeCallbacks(this)
@@ -267,8 +272,11 @@ fun ExploreAlbumButton(
                                 }
                             }
                         }
-                        handler.value.postDelayed(this, 500)
-                        screwed.value = false
+
+                        if (exploreSessionStarted.value) {
+                            handler.value.postDelayed(this, 500)
+                            screwed.value = false
+                        }
                     }
                 } catch (e: Exception) {
                     Log.d("checkProgressRunnable", "checkProgressRunnable failed: $e")
