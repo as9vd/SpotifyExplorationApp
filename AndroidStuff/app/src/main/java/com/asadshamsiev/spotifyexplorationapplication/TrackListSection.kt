@@ -17,6 +17,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.with
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -25,6 +26,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -33,6 +35,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Divider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -72,6 +75,7 @@ fun TrackListSection(
     val currentIntervalIndex = remember { mutableStateOf(0) }
 
     if (tracksInit) {
+
         Column(
             modifier = Modifier.fillMaxSize(),
             verticalArrangement = Arrangement.Center,
@@ -88,23 +92,38 @@ fun TrackListSection(
 
             Spacer(modifier = Modifier.size(8.dp))
 
-            Column(
-                verticalArrangement = Arrangement.spacedBy(2.dp)
-            ) {
-                // For each track in the current album,
-                // create a TrackCard for it.
-                for (pair in currentAlbumTracks) {
-                    val castedPair = pair as? Pair<*, *>
-                    val track = castedPair?.second
+            Box(Modifier.border(BorderStroke(1.5.dp, Color.Black))) {
+                Column {
+                    // Need one of these at the top.
+                    Divider(
+                        color = Color.Black,
+                        modifier = Modifier
+                            .height(1.5.dp)
+                            .fillMaxWidth()
+                    )
+                    for (pair in currentAlbumTracks) {
+                        val castedPair = pair as? Pair<*, *>
+                        val track = castedPair?.second
 
-                    if (track is SimpleTrack) {
-                        TrackCard(
-                            currentIntervalIndex = currentIntervalIndex,
-                            currentTrackIndex = currentTrackIndex,
-                            exploreSessionStarted = exploreSessionStarted,
-                            spotifyAppRemote = spotifyAppRemote,
-                            track = track
-                        )
+                        // For each track in the current album,
+                        // create a TrackCard for it.
+                        if (track is SimpleTrack) {
+                            TrackCard(
+                                currentIntervalIndex = currentIntervalIndex,
+                                currentTrackIndex = currentTrackIndex,
+                                exploreSessionStarted = exploreSessionStarted,
+                                spotifyAppRemote = spotifyAppRemote,
+                                track = track
+                            )
+
+                            // Manual border, because it's not like HTML/CSS at all.
+                            Divider(
+                                color = Color.Black,
+                                modifier = Modifier
+                                    .height(1.5.dp)
+                                    .fillMaxWidth()
+                            )
+                        }
                     }
                 }
             }
@@ -149,13 +168,12 @@ fun TrackCard(
     val context = LocalContext.current
 
     Card(
-        border = BorderStroke(1.5.dp, Color.Black),
         shape = RoundedCornerShape(0), modifier = Modifier
             .clickable {
                 Toast
                     .makeText(
                         context,
-                        "Clicking a button will cause the explore session to end",
+                        "Clicking a track will cause the explore session to end. Soz mate.",
                         Toast.LENGTH_SHORT
                     )
                     .show()
@@ -186,7 +204,7 @@ fun TrackCard(
                         Text(
                             "${track.trackNumber}.",
                             modifier = Modifier
-                                .padding(8.dp)
+                                .padding(12.dp)
                                 .weight(0.15f),
                             textAlign = TextAlign.Center
                         )
@@ -195,7 +213,7 @@ fun TrackCard(
                         Text(
                             "🦴",
                             modifier = Modifier
-                                .padding(8.dp)
+                                .padding(12.dp)
                                 .weight(0.15f)
                                 .graphicsLayer(rotationZ = shake),
                             textAlign = TextAlign.Center
@@ -208,7 +226,7 @@ fun TrackCard(
                         fontWeight = FontWeight(fontWeight),
                         textAlign = TextAlign.Start,
                         modifier = Modifier
-                            .padding(8.dp)
+                            .padding(12.dp)
                             .weight(0.85f)
                     )
                 }
