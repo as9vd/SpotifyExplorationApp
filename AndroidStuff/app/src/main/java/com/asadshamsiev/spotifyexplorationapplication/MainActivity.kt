@@ -89,9 +89,14 @@ class MainActivity : ComponentActivity() {
             override fun onConnected(appRemote: SpotifyAppRemote) {
                 Log.d("SpotifyStuff", "Connected! Finally.")
                 spotifyAppRemote.value = appRemote
+
+                // Listen to every single update in the PlayerState.
+                // This means whenever the current track, playback speed, or pause status changes,
+                // this block of code down here will run.
                 spotifyAppRemote.value?.playerApi?.subscribeToPlayerState()?.setEventCallback { state ->
+                    // I have these booleans below so blocks of code don't redundantly get called.
                     val isSongNew: Boolean = mainScreenViewModel.trackUri.value != state.track.uri
-                    val isAlbumNew = mainScreenViewModel.albumUri.value != state.track.album.uri
+                    val isAlbumNew: Boolean = mainScreenViewModel.albumUri.value != state.track.album.uri
 
                     if (isSongNew) {
                         run { // 1. Change song state (if changed).
@@ -113,13 +118,17 @@ class MainActivity : ComponentActivity() {
             }
         })
 
-        // 2. Connect the Spotify API that'll call the public search shit.
+        // 3. Connect the Spotify API that'll call the public search API.
         lifecycleScope.launch {
             buildSpotifyPublicApi()
         }
     }
 
+    // Flipper is used to get more information about the application.
+    // This is good for breaking down network calls (lol) and understanding crashes,
+    // without having to go through 500k+ Logcat entries.
     private fun connectFlipper() {
+        // I got this from the official Flipper site.
         if (BuildConfig.DEBUG && FlipperUtils.shouldEnableFlipper(this)) {
             SoLoader.init(this, false)
             val client = AndroidFlipperClient.getInstance(this)
@@ -133,17 +142,25 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    // Step 3 of the onStart() (as of 9/19).
+    // Attempts to set up the SpotifyApi (by this Adam Kotzman dude).
+    // If it fails, MainScreenViewModel will make this known by updating isSpotifyApiDead.
     private suspend fun buildSpotifyPublicApi() {
         try {
+            // Calls the builder that'll initialise the public Spotify API with the ID and secret.
             publicSpotifyAppApi.value = spotifyAppApi(clientId = clientId, clientSecret = clientSecret).build(
                 enableDefaultTokenRefreshProducerIfNoneExists = true
             )
+            mainScreenViewModel.setSpotifyApiDeadState(false)
         } catch (e: Exception) {
             Log.e("SpotifyApiError", "Failed to build Spotify public API.", e)
             mainScreenViewModel.setSpotifyApiDeadState(true)
         }
     }
 
+    // If a song changes, update the current track uri and track name.
+    // Gets called whenever PlayerState changes in the spotifyAppRemote,
+    // which is a package maintained by the Spotify corporation itself.
     private fun handleSongChange(state: PlayerState) {
         val currentTrackUri: String = mainScreenViewModel.trackUri.value
 
@@ -155,12 +172,14 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun handleAlbumChange(state: PlayerState) {
+        // Obviously, update the current album uri and name.
         mainScreenViewModel.setAlbumUri(state.track.album.uri)
         mainScreenViewModel.setAlbumName(state.track.album.name)
 
         lifecycleScope.launch {
             Log.d("AlbumUri", "Album changed!")
             try {
+                // This is the uri of the album we've just started playing.
                 val currAlbumUri: String = mainScreenViewModel.albumUri.value
                 val album =
                     publicSpotifyAppApi.value?.albums?.getAlbum(currAlbumUri)
@@ -177,25 +196,21 @@ class MainActivity : ComponentActivity() {
                     for (track in album!!.tracks) {
                         val trackLength: Int = track.length
                         updatedAlbumTracks.add(
-                            Pair(
-                                TrackUtils.sampleSong(
-                                    trackLength
-                                ), track
-                            )
+                            Pair(TrackUtils.sampleSong(trackLength), track)
                         )
                     }
 
                     // Might be redundant?
+                    // If it's the same album, then don't update it.
+                    // But we check for that in the PlayerState subscription block?
+                    // I don't know why I've got this here.
                     if (mainScreenViewModel.currentAlbumTracks.value == updatedAlbumTracks) {
                         return@launch
                     }
 
                     mainScreenViewModel.setCurrentAlbumTracks(updatedAlbumTracks)
                     mainScreenViewModel.setCombinedSpotifyState(
-                        SpotifyState(
-                            state.track.album.name,
-                            updatedAlbumTracks
-                        )
+                        SpotifyState(state.track.album.name, updatedAlbumTracks)
                     )
                     mainScreenViewModel.setFailedToGetTracks(false)
                 }
