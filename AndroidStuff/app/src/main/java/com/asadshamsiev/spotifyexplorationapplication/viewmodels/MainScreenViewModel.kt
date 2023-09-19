@@ -1,7 +1,5 @@
 package com.asadshamsiev.spotifyexplorationapplication.viewmodels
 
-import android.annotation.SuppressLint
-import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import com.adamratzman.spotify.SpotifyAppApi
 import com.adamratzman.spotify.endpoints.pub.SearchApi
@@ -96,7 +94,7 @@ class MainScreenViewModel : ViewModel() {
         if (publicSpotifyAppApi != null) {
             // Otherwise, might block the main thread.
             res = withContext(Dispatchers.IO) {
-                publicSpotifyAppApi!!.search.search(
+                publicSpotifyAppApi.search.search(
                     query = query,
                     searchTypes = listOf(SearchApi.SearchType.Album).toTypedArray(),
                     limit = 4

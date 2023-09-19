@@ -25,6 +25,7 @@ import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -66,26 +67,29 @@ const val clientSecret = "58f5caf8a73b439689b108824daf4c79"
 const val redirectUri = "com.asadshamsiev.spotifyexplorationapplication://callback"
 
 class MainActivity : ComponentActivity() {
-    private var spotifyAppRemote: SpotifyAppRemote? = null
-    private var publicSpotifyAppApi: SpotifyAppApi? = null
-
     private lateinit var mainScreenViewModel: MainScreenViewModel
+
+    private var spotifyAppRemote: MutableState<SpotifyAppRemote?> = mutableStateOf(null)
+    private var publicSpotifyAppApi: MutableState<SpotifyAppApi?> = mutableStateOf(null)
 
     override fun onStart() {
         super.onStart()
 
-        // 0. Set the connection parameters..
+        // 1. Load the ViewModel.
+        mainScreenViewModel = ViewModelProvider(this).get(MainScreenViewModel::class.java)
+
+        // 2a. Set the connection parameters..
         val connectionParams = ConnectionParams.Builder(clientId)
             .setRedirectUri(redirectUri)
             .showAuthView(true)
             .build()
 
-        // 1. Connect the Spotify connected to the local app on my phone.
+        // 2b. Connect the Spotify connected to the local app on my phone.
         SpotifyAppRemote.connect(this, connectionParams, object : Connector.ConnectionListener {
             override fun onConnected(appRemote: SpotifyAppRemote) {
                 Log.d("SpotifyStuff", "Connected! Finally.")
-                spotifyAppRemote = appRemote
-                spotifyAppRemote?.playerApi?.subscribeToPlayerState()?.setEventCallback { state ->
+                spotifyAppRemote.value = appRemote
+                spotifyAppRemote.value?.playerApi?.subscribeToPlayerState()?.setEventCallback { state ->
                     val isSongNew: Boolean = mainScreenViewModel.trackUri.value != state.track.uri
                     val isAlbumNew = mainScreenViewModel.albumUri.value != state.track.album.uri
 
@@ -131,10 +135,9 @@ class MainActivity : ComponentActivity() {
 
     private suspend fun buildSpotifyPublicApi() {
         try {
-            publicSpotifyAppApi =
-                spotifyAppApi(clientId = clientId, clientSecret = clientSecret).build(
-                    enableDefaultTokenRefreshProducerIfNoneExists = true
-                )
+            publicSpotifyAppApi.value = spotifyAppApi(clientId = clientId, clientSecret = clientSecret).build(
+                enableDefaultTokenRefreshProducerIfNoneExists = true
+            )
         } catch (e: Exception) {
             Log.e("SpotifyApiError", "Failed to build Spotify public API.", e)
             mainScreenViewModel.setSpotifyApiDeadState(true)
@@ -160,7 +163,7 @@ class MainActivity : ComponentActivity() {
             try {
                 val currAlbumUri: String = mainScreenViewModel.albumUri.value
                 val album =
-                    publicSpotifyAppApi?.albums?.getAlbum(currAlbumUri)
+                    publicSpotifyAppApi.value?.albums?.getAlbum(currAlbumUri)
                 val isValidAlbum: Boolean = (album?.tracks != null)
 
                 if (isValidAlbum) {
@@ -212,12 +215,13 @@ class MainActivity : ComponentActivity() {
         // 1. Connect flipper.
         connectFlipper()
 
-        // 2. Load the ViewModel.
-        mainScreenViewModel = ViewModelProvider(this).get(MainScreenViewModel::class.java)
-
-        // 3. Populate the Compose stuff.
+        // 2. Populate the Compose stuff.
         setContent {
-            AppTheme(colourIndex = mainScreenViewModel.colourIndex.value) {
+            val colourIndex: Int = mainScreenViewModel.colourIndex.collectAsState().value
+            val spotifyAppRemote = spotifyAppRemote.value
+            val publicSpotifyAppApi = publicSpotifyAppApi.value
+
+            AppTheme(colourIndex = colourIndex) {
                 MainScreen(
                     viewModel = mainScreenViewModel,
                     spotifyAppRemote = spotifyAppRemote,
