@@ -166,7 +166,11 @@ fun TrackCard(
             .fillMaxWidth()
     ) {
         Box(contentAlignment = Alignment.Center) {
-            Crossfade(targetState = isPlaying.value, label = "Transition the Bone") { playing ->
+            Crossfade(
+                targetState = isPlaying.value,
+                label = "Transition the Bone",
+                animationSpec = tween(1000)
+            ) { playing ->
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     if (!playing) {
                         Text(
@@ -263,7 +267,7 @@ fun ExploreAlbumButton(
                                 }
                             }
                         }
-                        handler.value.postDelayed(this, 1000)
+                        handler.value.postDelayed(this, 500)
                         screwed.value = false
                     }
                 } catch (e: Exception) {
@@ -294,13 +298,11 @@ fun ExploreAlbumButton(
 
                     handler.value.post(checkProgressRunnable)
                 }
-
             screwed.value = false
         } else if (remoteApiConnected) {
             spotifyAppRemote?.playerApi?.pause()
             // TODO: Fix this so the skipping stuff stops when no longer in exploration mode.
             handler.value.removeCallbacks(checkProgressRunnable)
-
             screwed.value = false
         } else {
             handler.value.removeCallbacks(checkProgressRunnable) // Just in case.
@@ -309,6 +311,21 @@ fun ExploreAlbumButton(
         }
 
         exploreSessionStarted.value = !exploreSessionStarted.value
+    }
+
+    LaunchedEffect(exploreSessionStarted.value) {
+        if (!exploreSessionStarted.value) {
+            try {
+                handler.value.removeCallbacks(checkProgressRunnable)
+            } catch (e: Exception) {
+                Log.d("removeCallbacks", "Callback unsuccessfully removed: $e")
+            }
+
+            // Go back to the first song.
+            val firstTrackInAlbum: SimpleTrack = currentAlbumTracks[0].second
+            spotifyAppRemote?.playerApi?.play(firstTrackInAlbum.uri.uri)
+            spotifyAppRemote?.playerApi?.pause()
+        }
     }
 
     val currentTrackIntervals = currentAlbumTracks[currentTrackIndex.value].first

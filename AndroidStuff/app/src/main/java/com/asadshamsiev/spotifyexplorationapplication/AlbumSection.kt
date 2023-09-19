@@ -45,7 +45,7 @@ const val CARD_PADDING = 8
 
 @Composable
 fun AlbumSection(
-    foundStuff:MutableList<List<String>>,
+    foundStuff: MutableList<List<String>>,
     isLoading: MutableState<Boolean>,
     spotifyAppRemote: SpotifyAppRemote?,
     textFieldQuery: MutableState<String>,
@@ -115,6 +115,13 @@ fun AlbumCardResults(
     isLoading: MutableState<Boolean>,
     foundStuff: MutableList<List<String>>
 ) {
+    // When an album card is clicked, this'll be set to true so that other cards can't
+    // be clicked in the meantime.
+    // Prevents from calling stuff whilst something else is being called.
+    // Will be set to false when done.
+    // val isAlbumCardLoading = remember { mutableStateOf(false) }
+    // val albumBeingLoaded = remember { mutableStateOf(UNINIT_STR) } // Not yet.. too good.
+
     when {
         textFieldQuery.value.isEmpty() -> {
             // no-op. If nothing's typed, then just chill.
@@ -133,7 +140,16 @@ fun AlbumCardResults(
                     artistName = artistName,
                     albumName = albumName,
                     link = link,
-                    onClick = { spotifyAppRemote?.playerApi?.play(uri) }
+                    onClick = {
+                        // This stuff below will be used one of these days.
+                        // isAlbumCardLoading.value = true
+                        // // This'll be a CSV. Don't like it? Fine. Got any better ideas?
+                        // albumBeingLoaded.value = "${artistName},${albumName}"
+
+                        spotifyAppRemote?.playerApi?.play(uri)
+                    }
+                    // isAlbumCardLoading = isAlbumCardLoading,
+                    // albumBeingLoaded = albumBeingLoaded
                 )
             }
         }
@@ -150,6 +166,8 @@ fun AlbumCard(
     albumName: String,
     onClick: () -> Unit,
     link: String, // These'll eventually need defaults for if it craps out.
+    // isAlbumCardLoading: MutableState<Boolean>,
+    // albumBeingLoaded: MutableState<String>,
     modifier: Modifier = Modifier
 ) {
     // When the shit is clicked, it needs to animate.
