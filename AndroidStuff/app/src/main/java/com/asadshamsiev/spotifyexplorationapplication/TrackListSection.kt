@@ -36,6 +36,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -52,15 +53,60 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.adamratzman.spotify.models.SimpleTrack
 import com.asadshamsiev.spotifyexplorationapplication.utils.TrackUtils
+import com.asadshamsiev.spotifyexplorationapplication.viewmodels.MainScreenViewModel
 import com.spotify.android.appremote.api.SpotifyAppRemote
+
+@Composable
+fun TrackListSection(
+    spotifyAppRemote: SpotifyAppRemote? = null,
+    viewModel: MainScreenViewModel
+) {
+    val currentAlbumTracks: ArrayList<Pair<ArrayList<Pair<String, String>>, SimpleTrack>> =
+        viewModel.currentAlbumTracks.collectAsState().value
+    val tracksInit = currentAlbumTracks.isNotEmpty()
+
+    if (tracksInit) {
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            ExploreAlbumButton(
+                spotifyAppRemote = spotifyAppRemote!!,
+                currentAlbumTracks = currentAlbumTracks
+            )
+
+            Spacer(modifier = Modifier.size(8.dp))
+
+            Column(
+                verticalArrangement = Arrangement.spacedBy(2.dp)
+            ) {
+                for (pair in currentAlbumTracks) {
+                    val castedPair = pair as? Pair<*, *>
+                    val track = castedPair?.second
+
+                    if (track is SimpleTrack) {
+                        TrackCard(
+                            spotifyAppRemote = spotifyAppRemote,
+                            track = track
+                        )
+                    }
+                }
+            }
+        }
+    } else {
+        CircularProgressIndicator()
+        Text("Data is loading bruv.", fontStyle = FontStyle.Italic)
+    }
+
+    Spacer(modifier = Modifier.size(8.dp)) // A little space on the bottom.
+}
 
 @Composable
 fun TrackCard(
     spotifyAppRemote: SpotifyAppRemote? = null,
-    track: SimpleTrack,
-    active: Boolean
+    track: SimpleTrack
 ) {
-    val context = LocalContext.current
     val isPlaying = remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
@@ -88,9 +134,7 @@ fun TrackCard(
         border = BorderStroke(1.5.dp, Color.Black),
         shape = RoundedCornerShape(0), modifier = Modifier
             .clickable {
-                Toast
-                    .makeText(context, "Tee-hee!", Toast.LENGTH_SHORT)
-                    .show()
+                // no-op, as of right now.
             }
             .fillMaxWidth()
     ) {
@@ -106,6 +150,7 @@ fun TrackCard(
                             textAlign = TextAlign.Center
                         )
                     } else {
+                        // If the track is playing, show a bone instead of the track, and shake!
                         Text(
                             "🦴",
                             modifier = Modifier
@@ -135,8 +180,7 @@ fun TrackCard(
 @Composable
 fun ExploreAlbumButton(
     spotifyAppRemote: SpotifyAppRemote,
-    currentAlbumTracks: ArrayList<Pair<ArrayList<Pair<String, String>>, SimpleTrack>>,
-    currAlbumUri: String
+    currentAlbumTracks: ArrayList<Pair<ArrayList<Pair<String, String>>, SimpleTrack>>
 ) {
     val buttonClicked = remember { mutableStateOf(false) }
     var currentTrackIndex = remember { mutableStateOf(0) }
@@ -148,8 +192,6 @@ fun ExploreAlbumButton(
         override fun run() {
             spotifyAppRemote.playerApi.playerState?.setResultCallback { state ->
                 val currentPosition = state.playbackPosition
-
-                val currentTrack = currentAlbumTracks[currentTrackIndex.value].second
                 val currentTrackIntervals = currentAlbumTracks[currentTrackIndex.value].first
 
                 val currentInterval = currentTrackIntervals[currentIntervalIndex.value]
@@ -214,7 +256,6 @@ fun ExploreAlbumButton(
     }
 
     val currentTrackIntervals = currentAlbumTracks[currentTrackIndex.value].first
-    val currentInterval = currentTrackIntervals[currentIntervalIndex.value]
 
     if (!buttonClicked.value) {
         Button(
@@ -269,52 +310,3 @@ fun ExploreAlbumButton(
         }
     }
 }
-
-@Composable
-fun TrackListCards(
-    spotifyAppRemote: SpotifyAppRemote? = null,
-    currAlbumName: String,
-    currAlbumUri: String,
-    currentAlbumTracks: ArrayList<Pair<ArrayList<Pair<String, String>>, SimpleTrack>>
-) {
-    val tracksInit = currentAlbumTracks.isNotEmpty()
-
-    if (tracksInit) {
-        Column(
-            modifier = Modifier.fillMaxSize(),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            ExploreAlbumButton(
-                spotifyAppRemote = spotifyAppRemote!!,
-                currentAlbumTracks = currentAlbumTracks,
-                currAlbumUri = currAlbumUri
-            )
-
-            Spacer(modifier = Modifier.size(8.dp))
-
-            Column(
-                verticalArrangement = Arrangement.spacedBy(2.dp)
-            ) {
-                for ((index, pair) in currentAlbumTracks.withIndex()) {
-                    val castedPair = pair as? Pair<*, *>
-
-                    val duration = castedPair?.first
-                    val track = castedPair?.second
-
-                    if (track is SimpleTrack) {
-                        TrackCard(
-                            spotifyAppRemote = spotifyAppRemote,
-                            track = track,
-                            active = false
-                        )
-                    }
-                }
-            }
-        }
-    } else {
-        CircularProgressIndicator()
-        Text("Data is loading bruv.", fontStyle = FontStyle.Italic)
-    }
-}
-

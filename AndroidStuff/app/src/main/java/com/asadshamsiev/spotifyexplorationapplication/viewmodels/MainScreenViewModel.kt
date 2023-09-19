@@ -3,11 +3,16 @@ package com.asadshamsiev.spotifyexplorationapplication.viewmodels
 import android.annotation.SuppressLint
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
+import com.adamratzman.spotify.SpotifyAppApi
+import com.adamratzman.spotify.endpoints.pub.SearchApi
 import com.adamratzman.spotify.models.SimpleTrack
+import com.adamratzman.spotify.models.SpotifySearchResult
 import com.asadshamsiev.spotifyexplorationapplication.UNINIT_STR
 import com.asadshamsiev.spotifyexplorationapplication.utils.SpotifyState
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.withContext
 
 class MainScreenViewModel : ViewModel() {
     // We'll use this to tell if the local Spotify (1) thing (SpotifyAppRemote) doesn't work.
@@ -85,4 +90,20 @@ class MainScreenViewModel : ViewModel() {
         _currentAlbumTracks.value = currentAlbumTracks
     }
 
+    suspend fun searchForResult(publicSpotifyAppApi: SpotifyAppApi?, query: String): SpotifySearchResult? {
+        var res: SpotifySearchResult? = null
+
+        if (publicSpotifyAppApi != null) {
+            // Otherwise, might block the main thread.
+            res = withContext(Dispatchers.IO) {
+                publicSpotifyAppApi!!.search.search(
+                    query = query,
+                    searchTypes = listOf(SearchApi.SearchType.Album).toTypedArray(),
+                    limit = 4
+                )
+            }
+        }
+
+        return res
+    }
 }
