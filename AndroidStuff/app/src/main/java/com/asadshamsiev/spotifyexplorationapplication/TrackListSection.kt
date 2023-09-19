@@ -71,6 +71,7 @@ fun TrackListSection(
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            // This button is the thing that actually starts the sampling.
             ExploreAlbumButton(
                 spotifyAppRemote = spotifyAppRemote,
                 currentAlbumTracks = currentAlbumTracks
@@ -81,6 +82,8 @@ fun TrackListSection(
             Column(
                 verticalArrangement = Arrangement.spacedBy(2.dp)
             ) {
+                // For each track in the current album,
+                // create a TrackCard for it.
                 for (pair in currentAlbumTracks) {
                     val castedPair = pair as? Pair<*, *>
                     val track = castedPair?.second
@@ -95,6 +98,8 @@ fun TrackListSection(
             }
         }
     } else {
+        // I'll need something here for when it's a A) podcast
+        // or B) when the thing is just not going to load (e.g. past 10 seconds, just give up).
         CircularProgressIndicator()
         Text("Data is loading bruv.", fontStyle = FontStyle.Italic)
     }
@@ -102,6 +107,8 @@ fun TrackListSection(
     Spacer(modifier = Modifier.size(8.dp)) // A little space on the bottom.
 }
 
+// As of now, there's no cool onClick effect.
+// It doesn't play the song. Although it should.
 @Composable
 fun TrackCard(
     spotifyAppRemote: SpotifyAppRemote? = null,
@@ -111,23 +118,18 @@ fun TrackCard(
 
     LaunchedEffect(Unit) {
         spotifyAppRemote?.playerApi?.subscribeToPlayerState()?.setEventCallback { state ->
-            isPlaying.value =
-                if (state.track.uri == track.uri.uri) {
-                    true
-                } else {
-                    false
-                }
+            isPlaying.value = (state.track.uri == track.uri.uri)
         }
     }
 
-    val infiniteTransition = rememberInfiniteTransition()
+    val infiniteTransition = rememberInfiniteTransition(label = "Harlem Shake (Infinite Edition)")
     val shake by infiniteTransition.animateFloat(
         initialValue = -20f,
         targetValue = 20f,
         animationSpec = infiniteRepeatable(
             animation = tween(75, easing = LinearEasing),
             repeatMode = RepeatMode.Reverse
-        )
+        ), label = "Harlem Shake"
     )
 
     Card(
@@ -139,7 +141,7 @@ fun TrackCard(
             .fillMaxWidth()
     ) {
         Box(contentAlignment = Alignment.Center) {
-            Crossfade(targetState = isPlaying.value) { playing ->
+            Crossfade(targetState = isPlaying.value, label = "Transition the Bone") { playing ->
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     if (!playing) {
                         Text(
@@ -183,8 +185,8 @@ fun ExploreAlbumButton(
     currentAlbumTracks: ArrayList<Pair<ArrayList<Pair<String, String>>, SimpleTrack>>
 ) {
     val buttonClicked = remember { mutableStateOf(false) }
-    var currentTrackIndex = remember { mutableStateOf(0) }
-    var currentIntervalIndex = remember { mutableStateOf(0) }
+    val currentTrackIndex = remember { mutableStateOf(0) }
+    val currentIntervalIndex = remember { mutableStateOf(0) }
 
     val handler = rememberUpdatedState(Handler(Looper.getMainLooper()))
 
@@ -198,6 +200,7 @@ fun ExploreAlbumButton(
                     val currentInterval = currentTrackIntervals[currentIntervalIndex.value]
                     val endOfCurrentInterval: Long = TrackUtils.durationToMs((currentInterval.second))
 
+                    // If we're past the interval, then move on to the next one.
                     if (currentPosition >= endOfCurrentInterval) {
                         currentIntervalIndex.value++
 
@@ -250,9 +253,7 @@ fun ExploreAlbumButton(
                     handler.value.post(checkProgressRunnable)
                 }
         } else {
-            if (spotifyAppRemote != null) {
-                spotifyAppRemote.playerApi.pause()
-            }
+            spotifyAppRemote?.playerApi?.pause()
             handler.value.removeCallbacks(checkProgressRunnable)
         }
 
@@ -280,6 +281,7 @@ fun ExploreAlbumButton(
 
         Spacer(modifier = Modifier.size(8.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            // For each interval we've got for the song (3 as of now), create a card for it.
             for ((i, interval) in currentTrackIntervals.withIndex()) {
                 val blurModifier = if (i != currentIntervalIndex.value) {
                     Modifier.blur(8.dp)
@@ -307,7 +309,7 @@ fun ExploreAlbumButton(
                                     .padding(4.dp)
                                     .then(it)
                             )
-                        }
+                        }, label = "Update Interval Status"
                     )
                 }
             }

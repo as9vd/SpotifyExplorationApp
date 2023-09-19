@@ -33,7 +33,7 @@ fun MainScreen(
     val isLoading = remember { mutableStateOf(false) }
     val scrollState = rememberScrollState()
 
-    // Whenever the query gets updated.
+    // Whenever the query gets updated, run this thing.
     LaunchedEffect(textFieldQuery.value) {
         // If A) something has been typed,
         // or B) the entire query hasn't been deleted.
@@ -43,9 +43,12 @@ fun MainScreen(
 
             // Give it a second before conducting another search.
             delay(1000L)
+
+            // Use the public Spotify API to fetch results related to the query.
             val result = viewModel.searchForResult(publicSpotifyAppApi, textFieldQuery.value)
             foundStuff.clear()
 
+            // If the result isn't null, and the result yields album(s), then it's valid.
             val isValidResult: Boolean = (result?.albums != null && result.albums?.size!! > 0)
             if (isValidResult) {
                 val albumsList: ArrayList<List<String>> = arrayListOf()
