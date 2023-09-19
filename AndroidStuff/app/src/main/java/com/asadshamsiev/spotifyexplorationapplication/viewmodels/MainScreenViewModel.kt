@@ -1,5 +1,6 @@
 package com.asadshamsiev.spotifyexplorationapplication.viewmodels
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import com.adamratzman.spotify.SpotifyAppApi
 import com.adamratzman.spotify.endpoints.pub.SearchApi
@@ -93,12 +94,16 @@ class MainScreenViewModel : ViewModel() {
 
         if (publicSpotifyAppApi != null) {
             // Otherwise, might block the main thread.
-            res = withContext(Dispatchers.IO) {
-                publicSpotifyAppApi.search.search(
-                    query = query,
-                    searchTypes = listOf(SearchApi.SearchType.Album).toTypedArray(),
-                    limit = 4
-                )
+            try {
+                res = withContext(Dispatchers.IO) {
+                    publicSpotifyAppApi.search.search(
+                        query = query,
+                        searchTypes = listOf(SearchApi.SearchType.Album).toTypedArray(),
+                        limit = 4
+                    )
+                }
+            } catch (e: Exception) {
+                Log.d("searchForResult", "searchForResult failed: $e")
             }
         }
 

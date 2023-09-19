@@ -49,6 +49,8 @@ fun MainScreen(
             foundStuff.clear()
 
             // If the result isn't null, and the result yields album(s), then it's valid.
+            // Otherwise, if it's not valid, then at least it's handled below, with
+            // "No results found".
             val isValidResult: Boolean = (result?.albums != null && result.albums?.size!! > 0)
             if (isValidResult) {
                 val albumsList: ArrayList<List<String>> = arrayListOf()

@@ -213,6 +213,9 @@ class MainActivity : ComponentActivity() {
                         SpotifyState(state.track.album.name, updatedAlbumTracks)
                     )
                     mainScreenViewModel.setFailedToGetTracks(false)
+                } else {
+                    // If the album's tracks is null, then the album is screwed.
+                    mainScreenViewModel.setFailedToGetTracks(true)
                 }
             } catch (e: Exception) {
                 Log.d(
@@ -244,5 +247,16 @@ class MainActivity : ComponentActivity() {
                 )
             }
         }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+
+        // Release the local Spotify API, if it's been properly initialised.
+        if (spotifyAppRemote.value != null) {
+            SpotifyAppRemote.disconnect(spotifyAppRemote.value)
+        }
+
+        // TODO: Maybe the same for the public Spotify API?
     }
 }
