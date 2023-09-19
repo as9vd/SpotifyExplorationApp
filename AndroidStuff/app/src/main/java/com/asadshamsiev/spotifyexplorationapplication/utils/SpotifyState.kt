@@ -1,4 +1,4 @@
-package com.asadshamsiev.spotifyexplorationapplication
+package com.asadshamsiev.spotifyexplorationapplication.utils
 
 import com.adamratzman.spotify.models.SimpleTrack
 

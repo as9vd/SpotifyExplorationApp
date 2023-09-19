@@ -5,41 +5,21 @@ import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.animation.core.FastOutLinearInEasing
-import androidx.compose.animation.core.LinearOutSlowInEasing
-import androidx.compose.animation.core.RepeatMode
+import androidx.activity.viewModels
 import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.spring
-import androidx.compose.animation.core.tween
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.*
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBars
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.windowInsetsTopHeight
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
@@ -51,14 +31,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.view.WindowCompat
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import com.adamratzman.spotify.SpotifyAppApi
 import com.adamratzman.spotify.endpoints.pub.SearchApi
@@ -66,6 +43,9 @@ import com.adamratzman.spotify.models.SimpleTrack
 import com.adamratzman.spotify.models.SpotifySearchResult
 import com.adamratzman.spotify.spotifyAppApi
 import com.asadshamsiev.spotifyexplorationapplication.ui.theme.AppTheme
+import com.asadshamsiev.spotifyexplorationapplication.utils.SpotifyState
+import com.asadshamsiev.spotifyexplorationapplication.utils.TrackUtils
+import com.asadshamsiev.spotifyexplorationapplication.viewmodels.MainScreenViewModel
 import com.facebook.flipper.android.AndroidFlipperClient
 import com.facebook.flipper.android.utils.FlipperUtils
 import com.facebook.flipper.plugins.inspector.DescriptorMapping
@@ -74,6 +54,7 @@ import com.facebook.soloader.SoLoader
 import com.spotify.android.appremote.api.ConnectionParams
 import com.spotify.android.appremote.api.Connector
 import com.spotify.android.appremote.api.SpotifyAppRemote
+import com.spotify.protocol.types.PlayerState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -85,44 +66,10 @@ const val clientSecret = "58f5caf8a73b439689b108824daf4c79"
 const val redirectUri = "com.asadshamsiev.spotifyexplorationapplication://callback"
 
 class MainActivity : ComponentActivity() {
-    // For changing colours.
-    private val colourIndex = mutableStateOf(0)
-
-    // Stuff used for parsing the length in ms.
-    private val trackUtils: TrackUtils = TrackUtils()
-
     private var spotifyAppRemote: SpotifyAppRemote? = null
     private var publicSpotifyAppApi: SpotifyAppApi? = null
 
-    // We'll use this to tell if the local Spotify (1) thing (SpotifyAppRemote) doesn't work.
-    private var localSpotifyDead = mutableStateOf(false)
-
-    // This'll be for the search stuff (2).
-    private var spotifyApiDead = mutableStateOf(false)
-    private var failedToGetTracks = mutableStateOf(false)
-
-    // This is what is used to check if music is currently playing, and if the track list should be shown.
-    private var musicPlaying = mutableStateOf(false)
-
-    private val trackUri = mutableStateOf(UNINIT_STR)
-    private val trackName = mutableStateOf(UNINIT_STR)
-
-    private val albumUri = mutableStateOf(UNINIT_STR)
-    private val albumName = mutableStateOf(UNINIT_STR)
-
-    private val changed = mutableStateOf(false)
-
-    private val combinedSpotifyState =
-        mutableStateOf(
-            SpotifyState(
-                albumName = UNINIT_STR,
-                currentAlbumTracks = ArrayList()
-            )
-        )
-
-    @SuppressLint("MutableCollectionMutableState")
-    private val currentAlbumTracks =
-        mutableStateOf(arrayListOf<Pair<ArrayList<Pair<String, String>>, SimpleTrack>>())
+    private lateinit var viewModel: MainScreenViewModel
 
     override fun onStart() {
         super.onStart()
@@ -139,69 +86,18 @@ class MainActivity : ComponentActivity() {
                 Log.d("SpotifyStuff", "Connected! Finally.")
                 spotifyAppRemote = appRemote
                 spotifyAppRemote?.playerApi?.subscribeToPlayerState()?.setEventCallback { state ->
-                    if (trackUri.value != state.track.uri) {
-                        run { // 1. Change song name (if changed).
-                            musicPlaying.value = !state.isPaused
+                    val isSongNew: Boolean = viewModel.trackUri.value != state.track.uri
+                    val isAlbumNew = viewModel.albumUri.value != state.track.album.uri
 
-                            Log.d("TrackUri", "Current TrackUri: ${trackUri.value}")
-                            Log.d("TrackUri", "State TrackUri: ${state.track.uri}")
-
-                            trackUri.value = state.track.uri
-                            trackName.value = state.track.name
+                    if (isSongNew) {
+                        run { // 1. Change song state (if changed).
+                            handleSongChange(state)
                         }
                     }
 
-                    if (albumUri.value != state.track.album.uri) { // 2. Change album name (if changed).
+                    if (isAlbumNew) {
                         run {
-                            albumUri.value = state.track.album.uri
-                            albumName.value = state.track.album.name
-
-                            lifecycleScope.launch {
-                                Log.d("AlbumUri", "Album changed!")
-                                try {
-                                    val album =
-                                        publicSpotifyAppApi?.albums?.getAlbum(albumUri.value)
-                                    if (album?.tracks != null) {
-                                        val updatedAlbumTracks =
-                                            arrayListOf<Pair<ArrayList<Pair<String, String>>, SimpleTrack>>()
-
-                                        // Seems to be the first index always.. might come back and
-                                        // bite me in the arse later.
-                                        for (track in album.tracks) {
-                                            val trackLength: Int = track.length
-                                            updatedAlbumTracks.add(
-                                                Pair(
-                                                    trackUtils.sampleSong(
-                                                        trackLength
-                                                    ), track
-                                                )
-                                            )
-                                        }
-
-                                        // Might be redundant?
-                                        if (currentAlbumTracks.value == updatedAlbumTracks) {
-                                            changed.value = false
-                                            return@launch
-                                        }
-
-                                        changed.value = true
-
-                                        currentAlbumTracks.value = updatedAlbumTracks
-                                        combinedSpotifyState.value =
-                                            SpotifyState(
-                                                state.track.album.name,
-                                                updatedAlbumTracks
-                                            )
-                                        failedToGetTracks.value = false
-                                    }
-                                } catch (e: Exception) {
-                                    Log.d(
-                                        "CurrentAlbumTracks",
-                                        "Failed to get album tracks: ${e}"
-                                    )
-                                    failedToGetTracks.value = true
-                                }
-                            }
+                            handleAlbumChange(state) // 2. Change album state (if changed).
                         }
                     }
                 }
@@ -209,7 +105,7 @@ class MainActivity : ComponentActivity() {
 
             override fun onFailure(throwable: Throwable) {
                 Log.e("SpotifyStuff", throwable.message, throwable)
-                localSpotifyDead.value = true
+                viewModel.setLocalSpotifyDeadState(true)
             }
         })
 
@@ -227,14 +123,96 @@ class MainActivity : ComponentActivity() {
                 )
         } catch (e: Exception) {
             Log.e("SpotifyApiError", "Failed to build Spotify public API.", e)
-            spotifyApiDead.value = true
+            viewModel.setSpotifyApiDeadState(true)
+        }
+    }
+
+    private fun handleSongChange(state: PlayerState) {
+
+        val currentTrackUri: String = viewModel.trackUri.value
+
+        Log.d("TrackUri", "Current TrackUri: ${currentTrackUri}")
+        Log.d("TrackUri", "State TrackUri: ${state.track.uri}")
+
+        viewModel.setTrackUri(state.track.uri)
+        viewModel.setTrackName(state.track.name)
+
+    }
+
+    private fun handleAlbumChange(state: PlayerState) {
+        viewModel.setAlbumUri(state.track.album.uri)
+        viewModel.setAlbumName(state.track.album.name)
+
+        lifecycleScope.launch {
+            Log.d("AlbumUri", "Album changed!")
+            try {
+                val currAlbumUri: String = viewModel.albumUri.value
+                val album =
+                    publicSpotifyAppApi?.albums?.getAlbum(currAlbumUri)
+                val isValidAlbum: Boolean = (album?.tracks != null)
+
+                if (isValidAlbum) {
+                    val updatedAlbumTracks =
+                        arrayListOf<Pair<ArrayList<Pair<String, String>>, SimpleTrack>>()
+
+                    for (track in album!!.tracks) {
+                        val trackLength: Int = track.length
+                        updatedAlbumTracks.add(
+                            Pair(
+                                TrackUtils.sampleSong(
+                                    trackLength
+                                ), track
+                            )
+                        )
+                    }
+
+                    // Might be redundant?
+                    if (viewModel.currentAlbumTracks.value == updatedAlbumTracks) {
+                        return@launch
+                    }
+
+                    viewModel.setCurrentAlbumTracks(updatedAlbumTracks)
+                    viewModel.setCombinedSpotifyState(
+                        SpotifyState(
+                            state.track.album.name,
+                            updatedAlbumTracks
+                        )
+                    )
+                    viewModel.setFailedToGetTracks(false)
+                }
+            } catch (e: Exception) {
+                Log.d(
+                    "CurrentAlbumTracks",
+                    "Failed to get album tracks: ${e}"
+                )
+                viewModel.setFailedToGetTracks(true)
+            }
         }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Connect flipper.
+        // 1. Connect flipper.
+        connectFlipper()
+
+        // 2. Load the ViewModel.
+        viewModel = ViewModelProvider(this).get(MainScreenViewModel::class.java)
+
+        // 3. Populate the Compose stuff.
+        setContent {
+            AppTheme(colourIndex = viewModel.colourIndex.value) {
+                MainScreen(
+                    viewModel.isSpotifyApiDead.value,
+                    viewModel.isLocalSpotifyDead.value,
+                    viewModel.albumUri.value,
+                    viewModel.combinedSpotifyState.value
+                )
+            }
+        }
+    }
+
+    private fun connectFlipper() {
         if (BuildConfig.DEBUG && FlipperUtils.shouldEnableFlipper(this)) {
             SoLoader.init(this, false)
             val client = AndroidFlipperClient.getInstance(this)
@@ -245,17 +223,6 @@ class MainActivity : ComponentActivity() {
                 )
             )
             client.start()
-        }
-
-        setContent {
-            AppTheme(colourIndex = colourIndex.value) {
-                MainScreen(
-                    spotifyApiDead.value,
-                    localSpotifyDead.value,
-                    albumUri.value,
-                    combinedSpotifyState.value
-                )
-            }
         }
     }
 
@@ -310,7 +277,7 @@ class MainActivity : ComponentActivity() {
                                 delay(750)
                                 setEnlargeTrigger(false)
                             }
-                            incrementColourButton()
+                            viewModel.incrementColourIndex()
                         }
                     )
                 }
@@ -359,14 +326,6 @@ class MainActivity : ComponentActivity() {
             else -> {
                 Text("No results found.") // Terrible search.
             }
-        }
-    }
-
-    private fun incrementColourButton() {
-        if (colourIndex.value == 5) {
-            colourIndex.value = 0
-        } else {
-            colourIndex.value += 1
         }
     }
 
@@ -449,8 +408,7 @@ class MainActivity : ComponentActivity() {
                     spotifyAppRemote = spotifyAppRemote,
                     currAlbumName = currAlbumName,
                     currAlbumUri = currAlbumUri,
-                    currentAlbumTracks = currentAlbumTracks,
-                    changed = changed.value
+                    currentAlbumTracks = currentAlbumTracks
                 )
 
                 Spacer(modifier = Modifier.size(8.dp))
