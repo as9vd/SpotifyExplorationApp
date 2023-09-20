@@ -98,9 +98,7 @@ fun TrackListSection(
                             .height(1.dp)
                             .fillMaxWidth()
                     )
-                    for (pair in currentAlbumTracks) {
-                        val track = pair.first
-
+                    for (track in currentAlbumTracks.map { it.first }.toSet()) {
                         // For each track in the current album,
                         // create a TrackCard for it.
                         TrackCard(
