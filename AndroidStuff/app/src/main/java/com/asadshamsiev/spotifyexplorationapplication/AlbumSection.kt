@@ -166,8 +166,6 @@ fun AlbumCard(
     albumName: String,
     onClick: () -> Unit,
     link: String, // These'll eventually need defaults for if it craps out.
-    // isAlbumCardLoading: MutableState<Boolean>,
-    // albumBeingLoaded: MutableState<String>,
     modifier: Modifier = Modifier
 ) {
     // When the shit is clicked, it needs to animate.

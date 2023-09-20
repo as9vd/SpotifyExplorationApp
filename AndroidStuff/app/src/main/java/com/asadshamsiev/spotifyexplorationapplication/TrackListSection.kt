@@ -98,6 +98,8 @@ fun TrackListSection(
                             .height(1.dp)
                             .fillMaxWidth()
                     )
+
+                    // Isolate the unique tracks.
                     for (track in currentAlbumTracks.map { it.first }.toSet()) {
                         // For each track in the current album,
                         // create a TrackCard for it.
@@ -273,19 +275,13 @@ fun ExploreAlbumButton(
                                 if (trackToBePlayed == previousTrackPlayed) {
                                     spotifyAppRemote.playerApi.seekTo(startOfNextInterval)
                                 } else {
+                                    // TODO: Fix this.
                                     // If the song is different, play the new song, and seek to the interval.
                                     // Play, and then immediately pause, because you can't changes tracks
                                     // without the song playing, unfortunately.
-                                    spotifyAppRemote.playerApi.play(trackToBePlayed.uri.uri)
-                                        .setResultCallback {
-                                            spotifyAppRemote.playerApi.pause()
-                                        }
-
-                                    // When ready, play from the desired position.
-                                    spotifyAppRemote.playerApi.seekTo(startOfNextInterval)
-                                        .setResultCallback {
-                                            spotifyAppRemote.playerApi.resume()
-                                        }
+                                    spotifyAppRemote.playerApi.play(trackToBePlayed.uri.uri).setResultCallback {
+                                        spotifyAppRemote.playerApi.seekTo(startOfNextInterval)
+                                    }
                                 }
                             } else {
                                 // If you're at the end (e.g. there are no more tracks), just
@@ -406,7 +402,7 @@ fun ExploreAlbumButton(
 
                 val interval = currentAlbumTracks[i].second
 
-                // For each interval we've got for the song (3 for > 45 seconds), create a card for it.
+                // For each interval we've got for the song (3 for > 45 seconds), create a duration card for it.
                 Card(
                     border = BorderStroke(0.5.dp, Color.Black),
                     colors = CardDefaults.cardColors(
