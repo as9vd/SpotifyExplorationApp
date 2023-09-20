@@ -52,7 +52,7 @@ class TrackUtils {
                 val thirdStart = i * thirdOfSong
                 val thirdEnd = thirdStart + thirdOfSong
 
-                val start = Random.nextInt(thirdStart, thirdEnd - segmentLength)
+                val start = if (i == 0) 0 else Random.nextInt(thirdStart, thirdEnd - segmentLength)
                 val end = start + segmentLength
 
                 periods.add(Period(start, end))
