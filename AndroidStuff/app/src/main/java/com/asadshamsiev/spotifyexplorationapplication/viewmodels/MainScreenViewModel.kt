@@ -81,11 +81,11 @@ class MainScreenViewModel : ViewModel() {
         _combinedSpotifyState.value = combinedSpotifyState
     }
 
-    val currentAlbumTracks: StateFlow<ArrayList<Pair<ArrayList<Pair<String, String>>, SimpleTrack>>>
+    val currentAlbumTracks: StateFlow<ArrayList<Pair<SimpleTrack, Pair<String, String>>>>
         get() = _currentAlbumTracks
     private val _currentAlbumTracks =
-        MutableStateFlow(arrayListOf<Pair<ArrayList<Pair<String, String>>, SimpleTrack>>())
-    fun setCurrentAlbumTracks(currentAlbumTracks: ArrayList<Pair<ArrayList<Pair<String, String>>, SimpleTrack>>) {
+        MutableStateFlow(ArrayList<Pair<SimpleTrack, Pair<String, String>>>())
+    fun setCurrentAlbumTracks(currentAlbumTracks: ArrayList<Pair<SimpleTrack, Pair<String, String>>>) {
         _currentAlbumTracks.value = currentAlbumTracks
     }
 

@@ -67,16 +67,14 @@ fun TrackListSection(
     spotifyAppRemote: SpotifyAppRemote? = null,
     viewModel: MainScreenViewModel
 ) {
-    val currentAlbumTracks: ArrayList<Pair<ArrayList<Pair<String, String>>, SimpleTrack>> =
+    val currentAlbumTracks: ArrayList<Pair<SimpleTrack, Pair<String, String>>> =
         viewModel.currentAlbumTracks.collectAsState().value
     val tracksInit = currentAlbumTracks.isNotEmpty()
     val exploreSessionStarted = remember { mutableStateOf(false) }
 
-    val currentTrackIndex = remember { mutableStateOf(0) }
     val currentIntervalIndex = remember { mutableStateOf(0) }
 
     if (tracksInit) {
-
         Column(
             modifier = Modifier.fillMaxSize(),
             verticalArrangement = Arrangement.Center,
@@ -86,7 +84,6 @@ fun TrackListSection(
             ExploreAlbumButton(
                 currentAlbumTracks = currentAlbumTracks,
                 currentIntervalIndex = currentIntervalIndex,
-                currentTrackIndex = currentTrackIndex,
                 exploreSessionStarted = exploreSessionStarted,
                 spotifyAppRemote = spotifyAppRemote
             )
@@ -102,28 +99,24 @@ fun TrackListSection(
                             .fillMaxWidth()
                     )
                     for (pair in currentAlbumTracks) {
-                        val castedPair = pair as? Pair<*, *>
-                        val track = castedPair?.second
+                        val track = pair.first
 
                         // For each track in the current album,
                         // create a TrackCard for it.
-                        if (track is SimpleTrack) {
-                            TrackCard(
-                                currentIntervalIndex = currentIntervalIndex,
-                                currentTrackIndex = currentTrackIndex,
-                                exploreSessionStarted = exploreSessionStarted,
-                                spotifyAppRemote = spotifyAppRemote,
-                                track = track
-                            )
+                        TrackCard(
+                            currentIntervalIndex = currentIntervalIndex,
+                            exploreSessionStarted = exploreSessionStarted,
+                            spotifyAppRemote = spotifyAppRemote,
+                            track = track
+                        )
 
-                            // Manual border, because it's not like HTML/CSS at all.
-                            Divider(
-                                color = Color.Black,
-                                modifier = Modifier
-                                    .height(1.dp)
-                                    .fillMaxWidth()
-                            )
-                        }
+                        // Manual border, because it's not like HTML/CSS at all.
+                        Divider(
+                            color = Color.Black,
+                            modifier = Modifier
+                                .height(1.dp)
+                                .fillMaxWidth()
+                        )
                     }
                 }
             }
@@ -142,7 +135,6 @@ fun TrackListSection(
 @Composable
 fun TrackCard(
     currentIntervalIndex: MutableState<Int>,
-    currentTrackIndex: MutableState<Int>,
     exploreSessionStarted: MutableState<Boolean>,
     spotifyAppRemote: SpotifyAppRemote? = null,
     track: SimpleTrack
@@ -190,7 +182,7 @@ fun TrackCard(
                 // Clicking a track will interrupt an explore session.
                 // Even if the remote API can't call it. Makes no difference. It will be false.
                 exploreSessionStarted.value = false
-                resetTrackRelatedIndices(currentTrackIndex, currentIntervalIndex)
+                resetTrackRelatedIndices(currentIntervalIndex)
             }
             .fillMaxWidth()
     ) {
@@ -236,69 +228,75 @@ fun TrackCard(
     }
 }
 
+// TODO: Need to deal with songs that can't play. Like that Tory Lanez album with The Colour Violet.
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
 fun ExploreAlbumButton(
     spotifyAppRemote: SpotifyAppRemote?,
-    currentAlbumTracks: ArrayList<Pair<ArrayList<Pair<String, String>>, SimpleTrack>>,
+    currentAlbumTracks: ArrayList<Pair<SimpleTrack, Pair<String, String>>>,
     exploreSessionStarted: MutableState<Boolean>,
-    currentTrackIndex: MutableState<Int>,
     currentIntervalIndex: MutableState<Int>
 ) {
     val handler = rememberUpdatedState(Handler(Looper.getMainLooper()))
     val screwed = remember { mutableStateOf(false) }
+    val buttonClicked = remember { mutableStateOf(false) }
 
+    // TODO: Fix this shit and the onClick to reflect the new currentAlbumTracks format.
     val checkProgressRunnable = object : Runnable {
         override fun run() {
             if (spotifyAppRemote != null && spotifyAppRemote.isConnected) {
                 try {
                     spotifyAppRemote.playerApi.playerState?.setResultCallback { state ->
                         val currentPosition = state.playbackPosition
-                        val currentTrackIntervals =
-                            currentAlbumTracks[currentTrackIndex.value].first
 
-                        val currentInterval = currentTrackIntervals[currentIntervalIndex.value]
+                        // This is the paired interval (e.g. <"1:28", "2:56">).
+                        val currentInterval =
+                            currentAlbumTracks[currentIntervalIndex.value].second
+
                         val endOfCurrentInterval: Long =
-                            TrackUtils.durationToMs((currentInterval.second))
+                            TrackUtils.durationToMs(currentInterval.second)
 
                         // If we're past the interval, then move on to the next one.
                         if (currentPosition >= endOfCurrentInterval) {
                             currentIntervalIndex.value++
 
-                            // If there's another interval to be played for this song, then play it.
-                            if (currentIntervalIndex.value < currentTrackIntervals.size) {
-                                val nextInterval = currentTrackIntervals[currentIntervalIndex.value]
+                            // If there's another interval to be played, then play it.
+                            val amountOfIntervals: Int = currentAlbumTracks.size
+                            if (currentIntervalIndex.value < amountOfIntervals) {
+                                val trackToBePlayed =
+                                    currentAlbumTracks[currentIntervalIndex.value].first
+                                val previousTrackPlayed =
+                                    currentAlbumTracks[currentIntervalIndex.value - 1].first
+                                val nextInterval =
+                                    currentAlbumTracks[currentIntervalIndex.value].second
                                 val startOfNextInterval: Long =
                                     TrackUtils.durationToMs(nextInterval.first)
 
-                                spotifyAppRemote.playerApi.seekTo(startOfNextInterval)
-                            } else {
-                                // Otherwise, move on to the next song and reset the interval index.
-                                currentTrackIndex.value++
-                                currentIntervalIndex.value = 0
-
-                                if (currentTrackIndex.value < currentAlbumTracks.size) {
-                                    spotifyAppRemote.playerApi.play(currentAlbumTracks[currentTrackIndex.value].second.uri.uri)
-
-                                    val initialInterval =
-                                        currentAlbumTracks[currentTrackIndex.value].first[0]
-                                    val startOfFirstInterval: Long =
-                                        TrackUtils.durationToMs(initialInterval.first)
-
-                                    // Hot-fix. This shouldn't need to be here, cause I remove
-                                    // the callable's, but it does, for some reason.
-                                    // Need to read more about the internals on this.
-                                    if (exploreSessionStarted.value) {
-                                        handler.value.postDelayed({
-                                            spotifyAppRemote.playerApi.seekTo(startOfFirstInterval)
-                                        }, 500)
-                                    }
+                                if (trackToBePlayed == previousTrackPlayed) {
+                                    spotifyAppRemote.playerApi.seekTo(startOfNextInterval)
                                 } else {
-                                    spotifyAppRemote.playerApi.pause()
-                                    handler.value.removeCallbacks(this)
-                                    return@setResultCallback
+                                    // If the song is different, play the new song, and seek to the interval.
+                                    // Play, and then immediately pause, because you can't changes tracks
+                                    // without the song playing, unfortunately.
+                                    spotifyAppRemote.playerApi.play(trackToBePlayed.uri.uri)
+                                        .setResultCallback {
+                                            spotifyAppRemote.playerApi.pause()
+                                        }
+
+                                    // When ready, play from the desired position.
+                                    spotifyAppRemote.playerApi.seekTo(startOfNextInterval)
+                                        .setResultCallback {
+                                            spotifyAppRemote.playerApi.resume()
+                                        }
                                 }
+                            } else {
+                                // If you're at the end (e.g. there are no more tracks), just
+                                // stop the exploration process.
+                                spotifyAppRemote.playerApi.pause()
+                                handler.value.removeCallbacks(this)
+                                return@setResultCallback
                             }
+
                         }
 
                         if (exploreSessionStarted.value) {
@@ -323,23 +321,32 @@ fun ExploreAlbumButton(
     val onClick: () -> Unit = {
         val remoteApiConnected = (spotifyAppRemote != null && spotifyAppRemote.isConnected)
         if (!exploreSessionStarted.value && remoteApiConnected) {
-            spotifyAppRemote!!.playerApi.play(currentAlbumTracks[currentTrackIndex.value].second.uri.uri)
+            // Reset the index. Will start from the beginning, at the top of the list.
+            resetTrackRelatedIndices(currentIntervalIndex)
+
+            // Get the first track and its uri, because we'll play it.
+            val firstTrack = currentAlbumTracks[0].first
+            val firstTrackUri = firstTrack.uri.uri
+
+            spotifyAppRemote!!.playerApi.play(firstTrackUri)
                 ?.apply {
-                    val initialInterval = currentAlbumTracks[currentTrackIndex.value].first[0]
+                    val initialInterval = currentAlbumTracks[currentIntervalIndex.value].second
                     val startOfFirstInterval = TrackUtils.durationToMs(initialInterval.first)
 
                     handler.value.postDelayed({
                         spotifyAppRemote.playerApi.seekTo(startOfFirstInterval)
-                    }, 1000)
+                    }, 500)
 
                     handler.value.post(checkProgressRunnable)
                 }
             screwed.value = false
+            buttonClicked.value = true
         } else if (remoteApiConnected) {
             spotifyAppRemote?.playerApi?.pause()
             // TODO: Fix this so the skipping stuff stops when no longer in exploration mode.
             handler.value.removeCallbacks(checkProgressRunnable)
             screwed.value = false
+            buttonClicked.value = false
         } else {
             handler.value.removeCallbacks(checkProgressRunnable) // Just in case.
             Log.d("onClick", "Remote API not connected!")
@@ -349,23 +356,25 @@ fun ExploreAlbumButton(
         exploreSessionStarted.value = !exploreSessionStarted.value
     }
 
-    LaunchedEffect(exploreSessionStarted.value) {
+    LaunchedEffect(buttonClicked.value) {
         if (!exploreSessionStarted.value) {
             try {
                 handler.value.removeCallbacks(checkProgressRunnable)
-                resetTrackRelatedIndices(currentTrackIndex, currentIntervalIndex)
+                resetTrackRelatedIndices(currentIntervalIndex)
+
+                // TODO: Check if it was because the button was clicked.
+                // Go back to the first song.
+                val firstTrackInAlbum: SimpleTrack =
+                    currentAlbumTracks[currentIntervalIndex.value].first
+                spotifyAppRemote?.playerApi?.play(firstTrackInAlbum.uri.uri)
+                spotifyAppRemote?.playerApi?.pause()
             } catch (e: Exception) {
                 Log.d("removeCallbacks", "Callback unsuccessfully removed: $e")
             }
-
-            // Go back to the first song.
-            val firstTrackInAlbum: SimpleTrack = currentAlbumTracks[0].second
-            spotifyAppRemote?.playerApi?.play(firstTrackInAlbum.uri.uri)
-            spotifyAppRemote?.playerApi?.pause()
         }
     }
 
-    val currentTrackIntervals = currentAlbumTracks[currentTrackIndex.value].first
+    val currentTrack = currentAlbumTracks[currentIntervalIndex.value].first
 
     if (!exploreSessionStarted.value) {
         Button(
@@ -388,14 +397,18 @@ fun ExploreAlbumButton(
 
         // Give it a little crossfade so it doesn't abruptly enter/leave.
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            // For each interval we've got for the song (3 as of now), create a card for it.
-            for ((i, interval) in currentTrackIntervals.withIndex()) {
+            var i = 0
+            val amountOfIntervals = currentAlbumTracks.size
+            while (i < amountOfIntervals && currentAlbumTracks[i].first == currentTrack) {
                 val blurModifier = if (i != currentIntervalIndex.value) {
                     Modifier.blur(8.dp)
                 } else {
                     Modifier
                 }
 
+                val interval = currentAlbumTracks[i].second
+
+                // For each interval we've got for the song (3 for > 45 seconds), create a card for it.
                 Card(
                     border = BorderStroke(0.5.dp, Color.Black),
                     colors = CardDefaults.cardColors(
@@ -419,15 +432,15 @@ fun ExploreAlbumButton(
                         }, label = "Update Interval Status"
                     )
                 }
+
+                i++
             }
         }
     }
 }
 
 private fun resetTrackRelatedIndices(
-    currentTrackIndex: MutableState<Int>,
     currentIntervalIndex: MutableState<Int>
 ) {
-    currentTrackIndex.value = 0
     currentIntervalIndex.value = 0
 }

@@ -186,18 +186,23 @@ class MainActivity : ComponentActivity() {
                 val isValidAlbum: Boolean = (album?.tracks != null)
 
                 if (isValidAlbum) {
-                    // Pair: (List of track's durations, track).
-                    val updatedAlbumTracks =
-                        arrayListOf<Pair<
-                                ArrayList<Pair<String, String>
-                                         >,
-                                SimpleTrack>>()
+                    // TODO: Make it into ArrayList<Pair<SimpleTrack, Period>>, which is (track : duration).
+                    // Originally was val updatedAlbumTracks = arrayListOf<Pair<ArrayList<Pair<String, String>>, SimpleTrack>>()
+                    val updatedAlbumTracks = ArrayList<Pair<SimpleTrack, Pair<String, String>>>()
+                    // Now it is the track associated with a duration. No longer like a dict.
 
                     for (track in album!!.tracks) {
                         val trackLength: Int = track.length
-                        updatedAlbumTracks.add(
-                            Pair(TrackUtils.sampleSong(trackLength), track)
-                        )
+                        val segments: ArrayList<Pair<String, String>> = TrackUtils.sampleSong(trackLength)
+
+                        // Segment is a Pair<String, String>; first is start, second is end.
+                        // In time format (e.g. 1:28).
+                        for (segment in segments) {
+                            updatedAlbumTracks.add(
+                                Pair(track, segment)
+                            )
+                        }
+
                     }
 
                     // Might be redundant?
