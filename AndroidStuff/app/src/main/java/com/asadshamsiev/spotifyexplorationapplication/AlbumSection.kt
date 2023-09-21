@@ -49,6 +49,7 @@ fun AlbumSection(
     isLoading: MutableState<Boolean>,
     spotifyAppRemote: SpotifyAppRemote?,
     textFieldQuery: MutableState<String>,
+    exploreSessionStarted: MutableState<Boolean>,
     viewModel: MainScreenViewModel
 ) {
     SearchBox(viewModel = viewModel, textFieldQuery = textFieldQuery)
@@ -57,6 +58,7 @@ fun AlbumSection(
         textFieldQuery = textFieldQuery,
         isLoading = isLoading,
         foundStuff = foundStuff,
+        exploreSessionStarted = exploreSessionStarted,
         viewModel = viewModel
     )
 }
@@ -115,6 +117,7 @@ fun AlbumCardResults(
     textFieldQuery: MutableState<String>,
     isLoading: MutableState<Boolean>,
     foundStuff: MutableList<List<String>>,
+    exploreSessionStarted: MutableState<Boolean>,
     viewModel: MainScreenViewModel
 ) {
     when {
@@ -139,6 +142,7 @@ fun AlbumCardResults(
                         spotifyAppRemote?.playerApi?.play(uri)?.setResultCallback {
                             // If you can load it, good.
                             viewModel.setLocalSpotifyDeadState(false)
+                            exploreSessionStarted.value = false
                         }?.setErrorCallback {
                             // If you can't load the album, then the remote API is dead.
                             viewModel.setLocalSpotifyDeadState(true)

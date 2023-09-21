@@ -56,7 +56,6 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.adamratzman.spotify.models.SimpleTrack
 import com.asadshamsiev.spotifyexplorationapplication.utils.TrackUtils
 import com.asadshamsiev.spotifyexplorationapplication.viewmodels.MainScreenViewModel
@@ -65,12 +64,12 @@ import com.spotify.android.appremote.api.SpotifyAppRemote
 @Composable
 fun TrackListSection(
     spotifyAppRemote: SpotifyAppRemote? = null,
-    viewModel: MainScreenViewModel
+    viewModel: MainScreenViewModel,
+    exploreSessionStarted: MutableState<Boolean>
 ) {
     val currentAlbumTracks: ArrayList<Pair<SimpleTrack, Pair<String, String>>> =
         viewModel.currentAlbumTracks.collectAsState().value
     val tracksInit = currentAlbumTracks.isNotEmpty()
-    val exploreSessionStarted = remember { mutableStateOf(false) }
 
     val currentIntervalIndex = remember { mutableStateOf(0) }
 
@@ -187,7 +186,7 @@ fun TrackCard(
                 try {
                     spotifyAppRemote?.playerApi
                         ?.play(track.uri.uri)
-                        ?.setErrorCallback { it ->
+                        ?.setErrorCallback {
                             Log.d("it", it.toString())
                         }
                     screwed.value = false
@@ -260,7 +259,11 @@ fun ExploreAlbumButton(
     val screwed = remember { mutableStateOf(false) }
     val buttonClicked = remember { mutableStateOf(false) }
 
-    val trackStartIndices = remember { findFirstIndicesOfTracks(currentAlbumTracks) }
+    val trackStartIndices = remember { mutableStateOf(findFirstIndicesOfTracks(currentAlbumTracks)) }
+
+    LaunchedEffect(currentAlbumTracks) {
+        trackStartIndices.value = findFirstIndicesOfTracks(currentAlbumTracks)
+    }
 
     // TODO: Fix this shit and the onClick to reflect the new currentAlbumTracks format.
     val checkProgressRunnable = object : Runnable {
@@ -438,7 +441,7 @@ fun ExploreAlbumButton(
         // Give it a little crossfade so it doesn't abruptly enter/leave.
         // TODO: The durations remove when you crack on.
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            var i = trackStartIndices[currentTrack?.id]
+            var i = trackStartIndices.value[currentTrack?.id]
             val amountOfIntervals = currentAlbumTracks.size
             if (i != null) {
                 while (i < amountOfIntervals && currentAlbumTracks[i].first == currentTrack) {

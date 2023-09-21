@@ -192,14 +192,17 @@ class MainActivity : ComponentActivity() {
                     val updatedAlbumTracks = ArrayList<Pair<SimpleTrack, Pair<String, String>>>()
 
                     for (track in album!!.tracks) {
+                        val trackLength: Int = track.length
+
                         // TODO: Check if it's playable in bloody America. "US" in availableMarkets is too slow.
                         val isPlayable = track.availableMarkets.size > 0
+                        val isOfNotableLength = trackLength > 20000
 
-                        if (!isPlayable) {
+                        // If it's not playable anywhere, or it's less than 20 seconds, just skip it.
+                        if (!isPlayable || !isOfNotableLength) {
                             continue
                         }
 
-                        val trackLength: Int = track.length
                         val segments: ArrayList<Pair<String, String>> = TrackUtils.sampleSong(trackLength)
 
                         // Segment is a Pair<String, String>; first is start, second is end.

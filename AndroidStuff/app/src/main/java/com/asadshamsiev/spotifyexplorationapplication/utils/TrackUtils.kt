@@ -32,17 +32,16 @@ class TrackUtils {
          * where each pair represents the start and end time of the segment in a readable format.
          */
         fun sampleSong(totalLengthMillis: Int): ArrayList<Pair<String, String>> {
-            if (totalLengthMillis <= 45000) { // If it's less than 45 seconds, why interval?
-                val returnVal = ArrayList<Pair<String, String>>()
-                returnVal.add(Pair(msToDuration(0), msToDuration(totalLengthMillis)))
-
-                return returnVal
-            }
+             if (totalLengthMillis <= 50000) { // If it's less than 50 seconds, just listen to half.
+                 val returnVal = ArrayList<Pair<String, String>>()
+                 returnVal.add(Pair(msToDuration(0), msToDuration(totalLengthMillis / 2)))
+                 return returnVal
+             }
 
             val numPeriod = 3
 
             val targetLength =
-                ((totalLengthMillis - 2000) * 0.51).toInt() // A little offset so doesn't go to end.
+                ((totalLengthMillis - 5000) * 0.54).toInt() // A little offset so doesn't go to end.
             val segmentLength = targetLength / numPeriod
             val thirdOfSong = totalLengthMillis / numPeriod
 
@@ -55,7 +54,12 @@ class TrackUtils {
                 val start = if (i == 0) 0 else Random.nextInt(thirdStart, thirdEnd - segmentLength)
                 val end = start + segmentLength
 
-                periods.add(Period(start, end))
+                // 5 seconds of breathing room at end.
+                if (i == numPeriod - 1 && end > totalLengthMillis - 5000) {
+                    periods.add(Period(start, totalLengthMillis - 5000))
+                } else {
+                    periods.add(Period(start, end))
+                }
             }
 
             val returnVal = ArrayList<Pair<String, String>>()
