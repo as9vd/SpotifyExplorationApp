@@ -9,12 +9,17 @@ import androidx.compose.animation.Crossfade
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.with
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.border
@@ -48,7 +53,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.blur
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
@@ -127,7 +134,10 @@ fun TrackListSection(
         // I'll need something here for when it's a A) podcast
         // or B) when the thing is just not going to load (e.g. past 10 seconds, just give up).
         CircularProgressIndicator()
-        Text("Data is loading bruv.", fontStyle = FontStyle.Italic)
+        Text(
+            "Data is loading. If this goes on for a while, there's a good chance your internet signal is weak, mate.",
+            fontStyle = FontStyle.Italic
+        )
     }
 
     Spacer(modifier = Modifier.size(8.dp)) // A little space on the bottom.
@@ -175,14 +185,6 @@ fun TrackCard(
     Card(
         shape = RoundedCornerShape(0), modifier = Modifier
             .clickable {
-                Toast
-                    .makeText(
-                        context,
-                        "Clicking a track will cause the explore session to end. Soz mate.",
-                        Toast.LENGTH_SHORT
-                    )
-                    .show()
-
                 try {
                     spotifyAppRemote?.playerApi
                         ?.play(track.uri.uri)
@@ -259,7 +261,8 @@ fun ExploreAlbumButton(
     val screwed = remember { mutableStateOf(false) }
     val buttonClicked = remember { mutableStateOf(false) }
 
-    val trackStartIndices = remember { mutableStateOf(findFirstIndicesOfTracks(currentAlbumTracks)) }
+    val trackStartIndices =
+        remember { mutableStateOf(findFirstIndicesOfTracks(currentAlbumTracks)) }
 
     LaunchedEffect(currentAlbumTracks) {
         trackStartIndices.value = findFirstIndicesOfTracks(currentAlbumTracks)
@@ -418,7 +421,6 @@ fun ExploreAlbumButton(
             null
         }
 
-
     if (!exploreSessionStarted.value) {
         Button(
             elevation = ButtonDefaults.elevatedButtonElevation(),
@@ -439,43 +441,36 @@ fun ExploreAlbumButton(
         Spacer(modifier = Modifier.size(8.dp))
 
         // Give it a little crossfade so it doesn't abruptly enter/leave.
-        // TODO: The durations remove when you crack on.
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             var i = trackStartIndices.value[currentTrack?.id]
             val amountOfIntervals = currentAlbumTracks.size
             if (i != null) {
                 while (i < amountOfIntervals && currentAlbumTracks[i].first == currentTrack) {
-                    val blurModifier = if (i != currentIntervalIndex.value) {
-                        Modifier.blur(8.dp)
-                    } else {
-                        Modifier
-                    }
-
                     val interval = currentAlbumTracks[i].second
 
                     // For each interval we've got for the song (3 for > 45 seconds), create a duration card for it.
-                    Card(
-                        border = BorderStroke(0.5.dp, Color.Black),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.onSurface
-                        ),
-                        shape = RoundedCornerShape(0)
-                    ) {
-                        AnimatedContent(
-                            targetState = blurModifier,
-                            transitionSpec = {
-                                fadeIn(animationSpec = tween(300, delayMillis = 300)) with
-                                        fadeOut(animationSpec = tween(300, delayMillis = 0))
-                            },
-                            content = {
-                                val duration = "${interval.first} - ${interval.second}"
-                                Text(
-                                    duration, modifier = Modifier
-                                        .padding(4.dp)
-                                        .then(it)
-                                )
-                            }, label = "Update Interval Status"
-                        )
+                    val duration = "${interval.first} - ${interval.second}"
+
+                    Crossfade(
+                        targetState = (i == currentIntervalIndex.value),
+                        label = "Transition Active Interval"
+                    ) { isSelected ->
+                        val containerColor =
+                            if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface
+
+                        Card(
+                            border = BorderStroke(1.dp, Color.Black),
+                            colors = CardDefaults.cardColors(
+                                containerColor = containerColor
+                            ),
+                            shape = RoundedCornerShape(0),
+                        ) {
+                            Text(
+                                duration,
+                                modifier = Modifier.padding(4.dp),
+                                fontWeight = FontWeight(400)
+                            )
+                        }
                     }
 
                     i++
