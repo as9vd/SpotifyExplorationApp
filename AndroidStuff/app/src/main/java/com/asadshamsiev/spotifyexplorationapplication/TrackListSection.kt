@@ -260,6 +260,8 @@ fun ExploreAlbumButton(
     val screwed = remember { mutableStateOf(false) }
     val buttonClicked = remember { mutableStateOf(false) }
 
+    val trackStartIndices = remember { findFirstIndicesOfTracks(currentAlbumTracks) }
+
     // TODO: Fix this shit and the onClick to reflect the new currentAlbumTracks format.
     val checkProgressRunnable = object : Runnable {
         override fun run() {
@@ -436,43 +438,45 @@ fun ExploreAlbumButton(
         // Give it a little crossfade so it doesn't abruptly enter/leave.
         // TODO: The durations remove when you crack on.
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            var i = currentIntervalIndex.value
+            var i = trackStartIndices[currentTrack?.id]
             val amountOfIntervals = currentAlbumTracks.size
-            while (i < amountOfIntervals && currentAlbumTracks[i].first == currentTrack) {
-                val blurModifier = if (i != currentIntervalIndex.value) {
-                    Modifier.blur(8.dp)
-                } else {
-                    Modifier
+            if (i != null) {
+                while (i < amountOfIntervals && currentAlbumTracks[i].first == currentTrack) {
+                    val blurModifier = if (i != currentIntervalIndex.value) {
+                        Modifier.blur(8.dp)
+                    } else {
+                        Modifier
+                    }
+
+                    val interval = currentAlbumTracks[i].second
+
+                    // For each interval we've got for the song (3 for > 45 seconds), create a duration card for it.
+                    Card(
+                        border = BorderStroke(0.5.dp, Color.Black),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.onSurface
+                        ),
+                        shape = RoundedCornerShape(0)
+                    ) {
+                        AnimatedContent(
+                            targetState = blurModifier,
+                            transitionSpec = {
+                                fadeIn(animationSpec = tween(300, delayMillis = 300)) with
+                                        fadeOut(animationSpec = tween(300, delayMillis = 0))
+                            },
+                            content = {
+                                val duration = "${interval.first} - ${interval.second}"
+                                Text(
+                                    duration, modifier = Modifier
+                                        .padding(4.dp)
+                                        .then(it)
+                                )
+                            }, label = "Update Interval Status"
+                        )
+                    }
+
+                    i++
                 }
-
-                val interval = currentAlbumTracks[i].second
-
-                // For each interval we've got for the song (3 for > 45 seconds), create a duration card for it.
-                Card(
-                    border = BorderStroke(0.5.dp, Color.Black),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.onSurface
-                    ),
-                    shape = RoundedCornerShape(0)
-                ) {
-                    AnimatedContent(
-                        targetState = blurModifier,
-                        transitionSpec = {
-                            fadeIn(animationSpec = tween(300, delayMillis = 300)) with
-                                    fadeOut(animationSpec = tween(300, delayMillis = 0))
-                        },
-                        content = {
-                            val duration = "${interval.first} - ${interval.second}"
-                            Text(
-                                duration, modifier = Modifier
-                                    .padding(4.dp)
-                                    .then(it)
-                            )
-                        }, label = "Update Interval Status"
-                    )
-                }
-
-                i++
             }
         }
     }
@@ -482,4 +486,19 @@ private fun resetTrackRelatedIndices(
     currentIntervalIndex: MutableState<Int>
 ) {
     currentIntervalIndex.value = 0
+}
+
+fun findFirstIndicesOfTracks(currentAlbumTracks: ArrayList<Pair<SimpleTrack, Pair<String, String>>>): Map<String, Int> {
+    val seenTracks = mutableSetOf<String>()
+    val firstIndices = mutableMapOf<String, Int>()
+
+    currentAlbumTracks.forEachIndexed { index, (track, _) ->
+        val trackId = track.id
+        if (trackId !in seenTracks) {
+            seenTracks.add(trackId)
+            firstIndices[trackId] = index
+        }
+    }
+
+    return firstIndices
 }
