@@ -56,7 +56,8 @@ fun AlbumSection(
         spotifyAppRemote = spotifyAppRemote,
         textFieldQuery = textFieldQuery,
         isLoading = isLoading,
-        foundStuff = foundStuff
+        foundStuff = foundStuff,
+        viewModel = viewModel
     )
 }
 
@@ -113,15 +114,9 @@ fun AlbumCardResults(
     spotifyAppRemote: SpotifyAppRemote?,
     textFieldQuery: MutableState<String>,
     isLoading: MutableState<Boolean>,
-    foundStuff: MutableList<List<String>>
+    foundStuff: MutableList<List<String>>,
+    viewModel: MainScreenViewModel
 ) {
-    // When an album card is clicked, this'll be set to true so that other cards can't
-    // be clicked in the meantime.
-    // Prevents from calling stuff whilst something else is being called.
-    // Will be set to false when done.
-    // val isAlbumCardLoading = remember { mutableStateOf(false) }
-    // val albumBeingLoaded = remember { mutableStateOf(UNINIT_STR) } // Not yet.. too good.
-
     when {
         textFieldQuery.value.isEmpty() -> {
             // no-op. If nothing's typed, then just chill.
@@ -141,15 +136,14 @@ fun AlbumCardResults(
                     albumName = albumName,
                     link = link,
                     onClick = {
-                        // This stuff below will be used one of these days.
-                        // isAlbumCardLoading.value = true
-                        // // This'll be a CSV. Don't like it? Fine. Got any better ideas?
-                        // albumBeingLoaded.value = "${artistName},${albumName}"
-
-                        spotifyAppRemote?.playerApi?.play(uri)
+                        spotifyAppRemote?.playerApi?.play(uri)?.setResultCallback {
+                            // If you can load it, good.
+                            viewModel.setLocalSpotifyDeadState(true)
+                        }?.setErrorCallback {
+                            // If you can't load the album, then the remote API is dead.
+                            viewModel.setLocalSpotifyDeadState(true)
+                        }
                     }
-                    // isAlbumCardLoading = isAlbumCardLoading,
-                    // albumBeingLoaded = albumBeingLoaded
                 )
             }
         }

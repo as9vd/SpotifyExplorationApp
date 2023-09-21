@@ -1,5 +1,6 @@
 package com.asadshamsiev.spotifyexplorationapplication
 
+import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -77,37 +78,41 @@ fun MainScreen(
     val spotifyApiDead = viewModel.isSpotifyApiDead.collectAsState().value
     val localSpotifyDead: Boolean = viewModel.isLocalSpotifyDead.collectAsState().value
 
-    Column(
-        modifier = Modifier
-            .padding(start = 16.dp, end = 16.dp)
-            .fillMaxSize()
-            .verticalScroll(scrollState),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        Spacer(modifier = Modifier.size(8.dp))
+    Crossfade(targetState = spotifyApiDead || localSpotifyDead, label = "Error(s) Transition") { state ->
+        Column(
+            modifier = Modifier
+                .padding(start = 16.dp, end = 16.dp)
+                .fillMaxSize()
+                .verticalScroll(scrollState),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Spacer(modifier = Modifier.size(8.dp))
 
-        // These errors only show when the
-        // 1. local phone API is dead or
-        // 2. the public API is dead.
-        SearchConditionalErrors(
-            spotifyApiDead = spotifyApiDead,
-            localSpotifyDead = localSpotifyDead
-        )
+            // These errors only show when the
+            // 1. local phone API is dead or
+            // 2. the public API is dead.
+            if (state) {
+                SearchConditionalErrors(
+                    spotifyApiDead = spotifyApiDead,
+                    localSpotifyDead = localSpotifyDead
+                )
+            } else {
+                if (!spotifyApiDead && !localSpotifyDead) {
+                    AlbumSection(
+                        foundStuff = foundStuff,
+                        isLoading = isLoading,
+                        spotifyAppRemote = spotifyAppRemote,
+                        textFieldQuery = textFieldQuery,
+                        viewModel = viewModel
+                    )
 
-        if (!spotifyApiDead && !localSpotifyDead) {
-            AlbumSection(
-                foundStuff = foundStuff,
-                isLoading = isLoading,
-                spotifyAppRemote = spotifyAppRemote,
-                textFieldQuery = textFieldQuery,
-                viewModel = viewModel
-            )
-
-            TrackListSection(
-                spotifyAppRemote = spotifyAppRemote,
-                viewModel = viewModel
-            )
+                    TrackListSection(
+                        spotifyAppRemote = spotifyAppRemote,
+                        viewModel = viewModel
+                    )
+                }
+            }
         }
     }
 }

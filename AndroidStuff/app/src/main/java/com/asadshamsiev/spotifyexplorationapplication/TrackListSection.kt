@@ -85,7 +85,8 @@ fun TrackListSection(
                 currentAlbumTracks = currentAlbumTracks,
                 currentIntervalIndex = currentIntervalIndex,
                 exploreSessionStarted = exploreSessionStarted,
-                spotifyAppRemote = spotifyAppRemote
+                spotifyAppRemote = spotifyAppRemote,
+                viewModel = viewModel
             )
 
             Spacer(modifier = Modifier.size(8.dp))
@@ -107,7 +108,8 @@ fun TrackListSection(
                             currentIntervalIndex = currentIntervalIndex,
                             exploreSessionStarted = exploreSessionStarted,
                             spotifyAppRemote = spotifyAppRemote,
-                            track = track
+                            track = track,
+                            viewModel = viewModel
                         )
 
                         // Manual border, because it's not like HTML/CSS at all.
@@ -137,15 +139,25 @@ fun TrackCard(
     currentIntervalIndex: MutableState<Int>,
     exploreSessionStarted: MutableState<Boolean>,
     spotifyAppRemote: SpotifyAppRemote? = null,
-    track: SimpleTrack
+    track: SimpleTrack,
+    viewModel: MainScreenViewModel
 ) {
     val isPlaying = remember { mutableStateOf(false) }
 
     // If the current track uri is equal to this track's, then it isPlaying, which'll trigger animation.
     LaunchedEffect(track) {
         spotifyAppRemote?.playerApi?.subscribeToPlayerState()?.setEventCallback { state ->
-            isPlaying.value = (state.track.uri == track.uri.uri)
+            val validComposable = (state.track != null)
+            if (validComposable) {
+                isPlaying.value = (state.track.uri == track.uri.uri)
+                viewModel.setLocalSpotifyDeadState(false)
+            }
+        }?.setErrorCallback {
+            // If you can't play, it's dead.
+            Log.d("eventCallback Error", it.toString())
+            viewModel.setLocalSpotifyDeadState(true)
         }
+
     }
 
     val infiniteTransition = rememberInfiniteTransition(label = "Harlem Shake (Infinite Edition)")
@@ -237,7 +249,8 @@ fun ExploreAlbumButton(
     spotifyAppRemote: SpotifyAppRemote?,
     currentAlbumTracks: ArrayList<Pair<SimpleTrack, Pair<String, String>>>,
     exploreSessionStarted: MutableState<Boolean>,
-    currentIntervalIndex: MutableState<Int>
+    currentIntervalIndex: MutableState<Int>,
+    viewModel: MainScreenViewModel
 ) {
     val handler = rememberUpdatedState(Handler(Looper.getMainLooper()))
     val screwed = remember { mutableStateOf(false) }
@@ -264,7 +277,8 @@ fun ExploreAlbumButton(
 
                             // If there's another interval to be played, then play it.
                             val amountOfIntervals: Int = currentAlbumTracks.size
-                            if (currentIntervalIndex.value < amountOfIntervals) {
+                            val isAtEnd: Boolean = currentIntervalIndex.value >= amountOfIntervals
+                            if (!isAtEnd) {
                                 val trackToBePlayed =
                                     currentAlbumTracks[currentIntervalIndex.value].first
                                 val previousTrackPlayed =
@@ -279,9 +293,13 @@ fun ExploreAlbumButton(
                                 } else {
                                     // First interval starts at 0:00 (in this implementation), so
                                     // no need to skip now.
-                                    spotifyAppRemote.playerApi.play(trackToBePlayed.uri.uri).setErrorCallback {
-                                        Log.d("errorCallback", "Couldn't seek to the start of the next for the new song.")
-                                    }
+                                    spotifyAppRemote.playerApi.play(trackToBePlayed.uri.uri)
+                                        .setErrorCallback {
+                                            Log.d(
+                                                "errorCallback",
+                                                "Couldn't seek to the start of the next for the new song."
+                                            )
+                                        }
                                 }
                             } else {
                                 // If you're at the end (e.g. there are no more tracks), just
@@ -332,6 +350,12 @@ fun ExploreAlbumButton(
                     }, 500)
 
                     handler.value.post(checkProgressRunnable)
+
+                    // If you can load it, then good.
+                    viewModel.setLocalSpotifyDeadState(false)
+                }?.setErrorCallback {
+                    // If you can't play this, then the local API is screwed.
+                    viewModel.setLocalSpotifyDeadState(true)
                 }
             screwed.value = false
             buttonClicked.value = true
@@ -341,10 +365,14 @@ fun ExploreAlbumButton(
             handler.value.removeCallbacks(checkProgressRunnable)
             screwed.value = false
             buttonClicked.value = false
+
+            viewModel.setLocalSpotifyDeadState(false)
         } else {
             handler.value.removeCallbacks(checkProgressRunnable) // Just in case.
             Log.d("onClick", "Remote API not connected!")
             screwed.value = true
+
+            viewModel.setLocalSpotifyDeadState(true)
         }
 
         exploreSessionStarted.value = !exploreSessionStarted.value
