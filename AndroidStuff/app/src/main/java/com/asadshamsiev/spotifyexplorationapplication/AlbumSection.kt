@@ -138,7 +138,7 @@ fun AlbumCardResults(
                     onClick = {
                         spotifyAppRemote?.playerApi?.play(uri)?.setResultCallback {
                             // If you can load it, good.
-                            viewModel.setLocalSpotifyDeadState(true)
+                            viewModel.setLocalSpotifyDeadState(false)
                         }?.setErrorCallback {
                             // If you can't load the album, then the remote API is dead.
                             viewModel.setLocalSpotifyDeadState(true)

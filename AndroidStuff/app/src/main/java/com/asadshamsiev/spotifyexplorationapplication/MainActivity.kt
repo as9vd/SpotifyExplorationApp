@@ -188,12 +188,17 @@ class MainActivity : ComponentActivity() {
                 val isValidAlbum: Boolean = (album?.tracks != null)
 
                 if (isValidAlbum) {
-                    // TODO: Make it into ArrayList<Pair<SimpleTrack, Period>>, which is (track : duration).
                     // Originally was val updatedAlbumTracks = arrayListOf<Pair<ArrayList<Pair<String, String>>, SimpleTrack>>()
                     val updatedAlbumTracks = ArrayList<Pair<SimpleTrack, Pair<String, String>>>()
-                    // Now it is the track associated with a duration. No longer like a dict.
 
                     for (track in album!!.tracks) {
+                        // TODO: Check if it's playable in bloody America. "US" in availableMarkets is too slow.
+                        val isPlayable = track.availableMarkets.size > 0
+
+                        if (!isPlayable) {
+                            continue
+                        }
+
                         val trackLength: Int = track.length
                         val segments: ArrayList<Pair<String, String>> = TrackUtils.sampleSong(trackLength)
 

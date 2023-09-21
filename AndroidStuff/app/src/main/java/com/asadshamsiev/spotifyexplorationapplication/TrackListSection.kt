@@ -185,7 +185,11 @@ fun TrackCard(
                     .show()
 
                 try {
-                    spotifyAppRemote?.playerApi?.play(track.uri.uri)
+                    spotifyAppRemote?.playerApi
+                        ?.play(track.uri.uri)
+                        ?.setErrorCallback { it ->
+                            Log.d("it", it.toString())
+                        }
                     screwed.value = false
                 } catch (e: Exception) {
                     Log.d("onClick", "Can't play specified song: $e")
@@ -305,6 +309,10 @@ fun ExploreAlbumButton(
                                 // If you're at the end (e.g. there are no more tracks), just
                                 // stop the exploration process.
                                 spotifyAppRemote.playerApi.pause()
+
+                                // To reset. Can explore again afterward.
+                                exploreSessionStarted.value = false
+
                                 handler.value.removeCallbacks(this)
                                 return@setResultCallback
                             }
@@ -315,6 +323,8 @@ fun ExploreAlbumButton(
                             handler.value.postDelayed(this, 500)
                             screwed.value = false
                         }
+                    }?.setErrorCallback {
+                        Log.d("it", it.toString())
                     }
                 } catch (e: Exception) {
                     Log.d("checkProgressRunnable", "checkProgressRunnable failed: $e")
@@ -396,7 +406,13 @@ fun ExploreAlbumButton(
         }
     }
 
-    val currentTrack = currentAlbumTracks[currentIntervalIndex.value].first
+    val currentTrack =
+        if (currentIntervalIndex.value < currentAlbumTracks.size) {
+            currentAlbumTracks[currentIntervalIndex.value].first
+        } else {
+            null
+        }
+
 
     if (!exploreSessionStarted.value) {
         Button(
