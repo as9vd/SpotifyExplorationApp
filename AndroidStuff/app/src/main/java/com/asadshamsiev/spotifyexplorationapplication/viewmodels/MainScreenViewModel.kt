@@ -12,6 +12,7 @@ import com.adamratzman.spotify.endpoints.pub.SearchApi
 import com.adamratzman.spotify.models.SimpleTrack
 import com.adamratzman.spotify.models.SpotifySearchResult
 import com.asadshamsiev.spotifyexplorationapplication.UNINIT_STR
+import com.asadshamsiev.spotifyexplorationapplication.utils.SimpleTrackWrapper
 import com.asadshamsiev.spotifyexplorationapplication.utils.SpotifyState
 import com.spotify.android.appremote.api.SpotifyAppRemote
 import kotlinx.coroutines.Dispatchers
@@ -120,15 +121,15 @@ class MainScreenViewModel : ViewModel() {
         )
     )
 
-    private var _currentAlbumTracks by mutableStateOf(emptyList<Pair<SimpleTrack, Pair<String, String>>>())
-    val currentAlbumTracks: List<Pair<SimpleTrack, Pair<String, String>>>
+    private var _currentAlbumTracks by mutableStateOf(emptyList<Pair<SimpleTrackWrapper, Pair<String, String>>>())
+    val currentAlbumTracks: List<Pair<SimpleTrackWrapper, Pair<String, String>>>
         get() = _currentAlbumTracks
 
-    fun setCurrentAlbumTracks(currentAlbumTracks: ArrayList<Pair<SimpleTrack, Pair<String, String>>>) {
+    fun setCurrentAlbumTracks(currentAlbumTracks: ArrayList<Pair<SimpleTrackWrapper, Pair<String, String>>>) {
         _currentAlbumTracks = currentAlbumTracks
     }
 
-    val uniqueTracks: List<SimpleTrack> by derivedStateOf {
+    val uniqueTracks: List<SimpleTrackWrapper> by derivedStateOf {
         _currentAlbumTracks.map { it.first }.toSet().toList()
     }
 

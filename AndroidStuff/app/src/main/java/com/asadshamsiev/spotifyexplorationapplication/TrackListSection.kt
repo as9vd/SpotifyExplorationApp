@@ -53,6 +53,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.adamratzman.spotify.models.SimpleTrack
+import com.asadshamsiev.spotifyexplorationapplication.utils.SimpleTrackWrapper
 import com.asadshamsiev.spotifyexplorationapplication.utils.TrackUtils
 import com.asadshamsiev.spotifyexplorationapplication.viewmodels.MainScreenViewModel
 import com.spotify.android.appremote.api.SpotifyAppRemote
@@ -63,7 +64,7 @@ fun TrackListSection(
     // spotifyAppRemote: SpotifyAppRemote? = null,
     viewModel: MainScreenViewModel
 ) {
-    val currentAlbumTracks: List<Pair<SimpleTrack, Pair<String, String>>> =
+    val currentAlbumTracks: List<Pair<SimpleTrackWrapper, Pair<String, String>>> =
         viewModel.currentAlbumTracks
     val tracksInit = currentAlbumTracks.isNotEmpty()
 
@@ -113,7 +114,7 @@ fun TrackListSection(
                     for (track in uniqueTracks) {
                         // For each track in the current album,
                         // create a TrackCard for it.
-                        key(track.id) {
+                        key(track.track.id) {
                             TrackCard(
                                 // spotifyAppRemote = spotifyAppRemote,
                                 track = track,
@@ -149,7 +150,7 @@ fun TrackListSection(
 @Composable
 fun TrackCard(
     // spotifyAppRemote: SpotifyAppRemote? = null,
-    track: SimpleTrack,
+    track: SimpleTrackWrapper,
     viewModel: MainScreenViewModel
 ) {
     val isPlaying = remember { mutableStateOf(false) }
@@ -160,7 +161,7 @@ fun TrackCard(
         spotifyAppRemote?.playerApi?.subscribeToPlayerState()?.setEventCallback { state ->
             val validComposable = (state.track != null)
             if (validComposable) {
-                isPlaying.value = (state.track.uri == track.uri.uri)
+                isPlaying.value = (state.track.uri == track.track.uri.uri)
                 viewModel.isLocalSpotifyDead = false
             }
         }?.setErrorCallback {
@@ -188,7 +189,7 @@ fun TrackCard(
             .clickable {
                 try {
                     spotifyAppRemote?.playerApi
-                        ?.play(track.uri.uri)
+                        ?.play(track.track.uri.uri)
                         ?.setErrorCallback {
                             Log.d("it", it.toString())
                         }
@@ -214,7 +215,7 @@ fun TrackCard(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     if (!playing) {
                         Text(
-                            "${track.trackNumber}.",
+                            "${track.track.trackNumber}.",
                             modifier = Modifier
                                 .padding(12.dp)
                                 .weight(0.15f),
@@ -234,7 +235,7 @@ fun TrackCard(
 
                     val fontWeight = if (isPlaying.value) 700 else 400
                     Text(
-                        "${track.name} (${TrackUtils.msToDuration(track.length)})",
+                        "${track.track.name} (${TrackUtils.msToDuration(track.track.length)})",
                         fontWeight = FontWeight(fontWeight),
                         textAlign = TextAlign.Start,
                         modifier = Modifier
@@ -252,7 +253,7 @@ fun TrackCard(
 @Composable
 fun ExploreAlbumButton(
     // spotifyAppRemote: SpotifyAppRemote?,
-    currentAlbumTracks: List<Pair<SimpleTrack, Pair<String, String>>>,
+    currentAlbumTracks: List<Pair<SimpleTrackWrapper, Pair<String, String>>>,
     viewModel: MainScreenViewModel
 ) {
     val handler = rememberUpdatedState(Handler(Looper.getMainLooper()))
@@ -306,7 +307,7 @@ fun ExploreAlbumButton(
                                 } else {
                                     // First interval starts at 0:00 (in this implementation), so
                                     // no need to skip now.
-                                    spotifyAppRemote.playerApi.play(trackToBePlayed.uri.uri)
+                                    spotifyAppRemote.playerApi.play(trackToBePlayed.track.uri.uri)
                                         .setErrorCallback {
                                             Log.d(
                                                 "errorCallback",
@@ -358,7 +359,7 @@ fun ExploreAlbumButton(
 
             // Get the first track and its uri, because we'll play it.
             val firstTrack = currentAlbumTracks[0].first
-            val firstTrackUri = firstTrack.uri.uri
+            val firstTrackUri = firstTrack.track.uri.uri
 
             spotifyAppRemote!!.playerApi.play(firstTrackUri)
                 ?.apply {
@@ -407,7 +408,7 @@ fun ExploreAlbumButton(
 
                 // Go back to the first song.
                 val firstTrackInAlbum: SimpleTrack =
-                    currentAlbumTracks[currentIntervalIndex].first
+                    currentAlbumTracks[currentIntervalIndex].first.track
                 spotifyAppRemote?.playerApi?.play(firstTrackInAlbum.uri.uri)
                 spotifyAppRemote?.playerApi?.pause()
             } catch (e: Exception) {
@@ -444,7 +445,7 @@ fun ExploreAlbumButton(
 
         // Give it a little crossfade so it doesn't abruptly enter/leave.
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            var i = trackStartIndices.value[currentTrack?.id]
+            var i = trackStartIndices.value[currentTrack?.track?.id]
             val amountOfIntervals = currentAlbumTracks.size
             if (i != null) {
                 while (i < amountOfIntervals && currentAlbumTracks[i].first == currentTrack) {
@@ -482,12 +483,12 @@ fun ExploreAlbumButton(
     }
 }
 
-fun findFirstIndicesOfTracks(currentAlbumTracks: List<Pair<SimpleTrack, Pair<String, String>>>): Map<String, Int> {
+fun findFirstIndicesOfTracks(currentAlbumTracks: List<Pair<SimpleTrackWrapper, Pair<String, String>>>): Map<String, Int> {
     val seenTracks = mutableSetOf<String>()
     val firstIndices = mutableMapOf<String, Int>()
 
     currentAlbumTracks.forEachIndexed { index, (track, _) ->
-        val trackId = track.id
+        val trackId = track.track.id
         if (trackId !in seenTracks) {
             seenTracks.add(trackId)
             firstIndices[trackId] = index

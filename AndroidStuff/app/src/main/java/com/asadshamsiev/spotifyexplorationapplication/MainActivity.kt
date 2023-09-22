@@ -44,6 +44,7 @@ import com.adamratzman.spotify.models.SimpleTrack
 import com.adamratzman.spotify.models.SpotifySearchResult
 import com.adamratzman.spotify.spotifyAppApi
 import com.asadshamsiev.spotifyexplorationapplication.ui.theme.AppTheme
+import com.asadshamsiev.spotifyexplorationapplication.utils.SimpleTrackWrapper
 import com.asadshamsiev.spotifyexplorationapplication.utils.SpotifyState
 import com.asadshamsiev.spotifyexplorationapplication.utils.TrackUtils
 import com.asadshamsiev.spotifyexplorationapplication.viewmodels.MainScreenViewModel
@@ -194,8 +195,8 @@ class MainActivity : ComponentActivity() {
 
                 if (isValidAlbum) {
                     // Originally was val updatedAlbumTracks = arrayListOf<Pair<ArrayList<Pair<String, String>>, SimpleTrack>>()
-                    val updatedAlbumTracks = ArrayList<Pair<SimpleTrack, Pair<String, String>>>()
-                    val batchTracks = ArrayList<Pair<SimpleTrack, Pair<String, String>>>()
+                    val updatedAlbumTracks = ArrayList<Pair<SimpleTrackWrapper, Pair<String, String>>>()
+                    val batchTracks = ArrayList<Pair<SimpleTrackWrapper, Pair<String, String>>>()
                     var counter = 0
 
                     for (track in album!!.tracks) {
@@ -220,7 +221,7 @@ class MainActivity : ComponentActivity() {
                         // }
 
                         for (segment in segments) {
-                            batchTracks.add(Pair(track, segment))
+                            batchTracks.add(Pair(SimpleTrackWrapper(track), segment))
                         }
 
                         counter++
