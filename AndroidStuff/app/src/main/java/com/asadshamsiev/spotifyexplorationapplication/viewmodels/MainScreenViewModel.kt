@@ -21,7 +21,7 @@ class MainScreenViewModel : ViewModel() {
     // We'll use this to tell if the local Spotify (1) thing (SpotifyAppRemote) doesn't work.
     var isLocalSpotifyDead: Boolean
         get() = _isLocalSpotifyDead.value
-        private set(value) {
+        set(value) {
             _isLocalSpotifyDead.value = value
         }
     private val _isLocalSpotifyDead = mutableStateOf(false)
@@ -29,7 +29,7 @@ class MainScreenViewModel : ViewModel() {
     // This'll be for the search stuff (2).
     var isSpotifyApiDead: Boolean
         get() = _isSpotifyApiDead.value
-        private set(value) {
+        set(value) {
             _isSpotifyApiDead.value = value
         }
 
@@ -38,7 +38,7 @@ class MainScreenViewModel : ViewModel() {
     // State to indicate if there was an error fetching tracks
     var failedToGetTracks: Boolean
         get() = _failedToGetTracks.value
-        private set(value) {
+        set(value) {
             _failedToGetTracks.value = value
         }
     private val _failedToGetTracks = mutableStateOf(false)
@@ -52,34 +52,28 @@ class MainScreenViewModel : ViewModel() {
 
     var trackUri: String
         get() = _trackUri.value
-        private set(value) {
+        set(value) {
             _trackUri.value = value
         }
     private val _trackUri = mutableStateOf(UNINIT_STR)
-    fun setTrackUri(trackUri: String) {
-        _trackUri.value = trackUri
-    }
 
     var trackName: String
         get() = _trackName.value
-        private set(value) {
+        set(value) {
             _trackName.value = value
         }
     private val _trackName = mutableStateOf(UNINIT_STR)
 
     var albumUri: String
         get() = _albumUri.value
-        private set(value) {
+        set(value) {
             _albumUri.value = value
         }
     private val _albumUri = mutableStateOf(UNINIT_STR)
-    fun setAlbumUri(albumUri: String) {
-        _albumUri.value = albumUri
-    }
 
     var albumName: String
         get() = _albumName.value
-        private set(value) {
+        set(value) {
             _albumName.value = value
         }
     private val _albumName = mutableStateOf(UNINIT_STR)
@@ -87,7 +81,7 @@ class MainScreenViewModel : ViewModel() {
     // For changing colours.
     var colourIndex: Int
         get() = _colourIndex.value
-        private set(value) {
+        set(value) {
             _colourIndex.value = value
         }
     private val _colourIndex = mutableStateOf(0)
@@ -101,7 +95,7 @@ class MainScreenViewModel : ViewModel() {
 
     var combinedSpotifyState: SpotifyState
         get() = _combinedSpotifyState.value
-        private set(value) {
+        set(value) {
             _combinedSpotifyState.value = value
         }
     private val _combinedSpotifyState = mutableStateOf(
@@ -125,7 +119,7 @@ class MainScreenViewModel : ViewModel() {
 
     var currentIntervalIndex: Int
         get() = _currentIntervalIndex.value
-        private set(value) {
+        set(value) {
             _currentIntervalIndex.value = value
         }
     private val _currentIntervalIndex =

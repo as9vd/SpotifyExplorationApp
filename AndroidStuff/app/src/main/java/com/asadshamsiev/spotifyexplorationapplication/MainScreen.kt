@@ -75,8 +75,8 @@ fun MainScreen(
         }
     }
 
-    val spotifyApiDead = viewModel.isSpotifyApiDead.collectAsState().value
-    val localSpotifyDead: Boolean = viewModel.isLocalSpotifyDead.collectAsState().value
+    val spotifyApiDead = viewModel.isSpotifyApiDead
+    val localSpotifyDead: Boolean = viewModel.isLocalSpotifyDead
 
     Crossfade(targetState = spotifyApiDead || localSpotifyDead, label = "Error(s) Transition") { state ->
         Column(

@@ -160,12 +160,12 @@ fun TrackCard(
             val validComposable = (state.track != null)
             if (validComposable) {
                 isPlaying.value = (state.track.uri == track.uri.uri)
-                viewModel.setLocalSpotifyDeadState(false)
+                viewModel.isLocalSpotifyDead = false
             }
         }?.setErrorCallback {
             // If you can't play, it's dead.
             Log.d("eventCallback Error", it.toString())
-            viewModel.setLocalSpotifyDeadState(true)
+            viewModel.isLocalSpotifyDead = true
         }
 
     }
@@ -200,7 +200,7 @@ fun TrackCard(
                 // Clicking a track will interrupt an explore session.
                 // Even if the remote API can't call it. Makes no difference. It will be false.
                 viewModel.setIsExploreSessionStarted(false)
-                viewModel.setCurrentIntervalIndex(0) // Sets index to 0.
+                viewModel.currentIntervalIndex = 0 // Sets index to 0.
             }
             .fillMaxWidth()
     ) {
@@ -257,7 +257,7 @@ fun ExploreAlbumButton(
     val handler = rememberUpdatedState(Handler(Looper.getMainLooper()))
     val screwed = remember { mutableStateOf(false) }
     val buttonClicked = remember { mutableStateOf(false) }
-    val currentIntervalIndex = viewModel.currentIntervalIndex.collectAsState().value
+    val currentIntervalIndex = viewModel.currentIntervalIndex
 
     val trackStartIndices =
         remember { mutableStateOf(findFirstIndicesOfTracks(currentAlbumTracks)) }
@@ -283,7 +283,7 @@ fun ExploreAlbumButton(
 
                         // If we're past the interval, then move on to the next one.
                         if (currentPosition >= endOfCurrentInterval) {
-                            viewModel.setCurrentIntervalIndex(currentIntervalIndex + 1)
+                            viewModel.currentIntervalIndex = currentIntervalIndex + 1
 
                             // If there's another interval to be played, then play it.
                             val amountOfIntervals: Int = currentAlbumTracks.size
@@ -351,7 +351,7 @@ fun ExploreAlbumButton(
         val remoteApiConnected = (spotifyAppRemote != null && spotifyAppRemote.isConnected)
         if (!viewModel.isExploreSessionStarted && remoteApiConnected) {
             // Reset the index. Will start from the beginning, at the top of the list.
-            viewModel.setCurrentIntervalIndex(0)
+            viewModel.currentIntervalIndex = 0
 
             // Get the first track and its uri, because we'll play it.
             val firstTrack = currentAlbumTracks[0].first
@@ -369,10 +369,10 @@ fun ExploreAlbumButton(
                     handler.value.post(checkProgressRunnable)
 
                     // If you can load it, then good.
-                    viewModel.setLocalSpotifyDeadState(false)
+                    viewModel.isLocalSpotifyDead = false
                 }?.setErrorCallback {
                     // If you can't play this, then the local API is screwed.
-                    viewModel.setLocalSpotifyDeadState(true)
+                    viewModel.isLocalSpotifyDead = true
                 }
             screwed.value = false
             buttonClicked.value = true
@@ -383,13 +383,13 @@ fun ExploreAlbumButton(
             screwed.value = false
             buttonClicked.value = false
 
-            viewModel.setLocalSpotifyDeadState(false)
+            viewModel.isLocalSpotifyDead = false
         } else {
             handler.value.removeCallbacks(checkProgressRunnable) // Just in case.
             Log.d("onClick", "Remote API not connected!")
             screwed.value = true
 
-            viewModel.setLocalSpotifyDeadState(true)
+            viewModel.isLocalSpotifyDead = true
         }
 
         viewModel.setIsExploreSessionStarted(!viewModel.isExploreSessionStarted)
@@ -400,7 +400,7 @@ fun ExploreAlbumButton(
         if (!viewModel.isExploreSessionStarted) {
             try {
                 handler.value.removeCallbacks(checkProgressRunnable)
-                viewModel.setCurrentIntervalIndex(0)
+                viewModel.currentIntervalIndex = 0
 
                 // Go back to the first song.
                 val firstTrackInAlbum: SimpleTrack =

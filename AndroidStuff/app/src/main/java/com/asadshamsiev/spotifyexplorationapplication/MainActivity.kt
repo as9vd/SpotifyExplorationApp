@@ -95,28 +95,30 @@ class MainActivity : ComponentActivity() {
                 // Listen to every single update in the PlayerState.
                 // This means whenever the current track, playback speed, or pause status changes,
                 // this block of code down here will run.
-                spotifyAppRemote.value?.playerApi?.subscribeToPlayerState()?.setEventCallback { state ->
-                    // I have these booleans below so blocks of code don't redundantly get called.
-                    val isSongNew: Boolean = mainScreenViewModel.trackUri.value != state.track.uri
-                    val isAlbumNew: Boolean = mainScreenViewModel.albumUri.value != state.track.album.uri
+                spotifyAppRemote.value?.playerApi?.subscribeToPlayerState()
+                    ?.setEventCallback { state ->
+                        // I have these booleans below so blocks of code don't redundantly get called.
+                        val isSongNew: Boolean = mainScreenViewModel.trackUri != state.track.uri
+                        val isAlbumNew: Boolean =
+                            mainScreenViewModel.albumUri != state.track.album.uri
 
-                    if (isSongNew) {
-                        run { // 1. Change song state (if changed).
-                            handleSongChange(state)
+                        if (isSongNew) {
+                            run { // 1. Change song state (if changed).
+                                handleSongChange(state)
+                            }
+                        }
+
+                        if (isAlbumNew) {
+                            run {
+                                handleAlbumChange(state) // 2. Change album state (if changed).
+                            }
                         }
                     }
-
-                    if (isAlbumNew) {
-                        run {
-                            handleAlbumChange(state) // 2. Change album state (if changed).
-                        }
-                    }
-                }
             }
 
             override fun onFailure(throwable: Throwable) {
                 Log.e("SpotifyStuff", throwable.message, throwable)
-                mainScreenViewModel.setLocalSpotifyDeadState(true)
+                mainScreenViewModel.isLocalSpotifyDead = true
             }
         })
 
@@ -150,13 +152,14 @@ class MainActivity : ComponentActivity() {
     private suspend fun buildSpotifyPublicApi() {
         try {
             // Calls the builder that'll initialise the public Spotify API with the ID and secret.
-            publicSpotifyAppApi.value = spotifyAppApi(clientId = clientId, clientSecret = clientSecret).build(
-                enableDefaultTokenRefreshProducerIfNoneExists = true
-            )
-            mainScreenViewModel.setSpotifyApiDeadState(false)
+            publicSpotifyAppApi.value =
+                spotifyAppApi(clientId = clientId, clientSecret = clientSecret).build(
+                    enableDefaultTokenRefreshProducerIfNoneExists = true
+                )
+            mainScreenViewModel.isSpotifyApiDead = false
         } catch (e: Exception) {
             Log.e("SpotifyApiError", "Failed to build Spotify public API.", e)
-            mainScreenViewModel.setSpotifyApiDeadState(true)
+            mainScreenViewModel.isSpotifyApiDead = true
         }
     }
 
@@ -164,25 +167,25 @@ class MainActivity : ComponentActivity() {
     // Gets called whenever PlayerState changes in the spotifyAppRemote,
     // which is a package maintained by the Spotify corporation itself.
     private fun handleSongChange(state: PlayerState) {
-        val currentTrackUri: String = mainScreenViewModel.trackUri.value
+        val currentTrackUri: String = mainScreenViewModel.trackUri
 
         Log.d("TrackUri", "Current TrackUri: ${currentTrackUri}")
         Log.d("TrackUri", "State TrackUri: ${state.track.uri}")
 
-        mainScreenViewModel.setTrackUri(state.track.uri)
-        mainScreenViewModel.setTrackName(state.track.name)
+        mainScreenViewModel.trackUri = state.track.uri
+        mainScreenViewModel.trackName = state.track.name
     }
 
     private fun handleAlbumChange(state: PlayerState) {
         // Obviously, update the current album uri and name.
-        mainScreenViewModel.setAlbumUri(state.track.album.uri)
-        mainScreenViewModel.setAlbumName(state.track.album.name)
+        mainScreenViewModel.albumUri = state.track.album.uri
+        mainScreenViewModel.albumName = state.track.album.name
 
         lifecycleScope.launch {
             Log.d("AlbumUri", "Album changed!")
             try {
                 // This is the uri of the album we've just started playing.
-                val currAlbumUri: String = mainScreenViewModel.albumUri.value
+                val currAlbumUri: String = mainScreenViewModel.albumUri
                 val album =
                     publicSpotifyAppApi.value?.albums?.getAlbum(currAlbumUri)
                 val isValidAlbum: Boolean = (album?.tracks != null)
@@ -205,12 +208,13 @@ class MainActivity : ComponentActivity() {
                             continue
                         }
 
-                        val segments: ArrayList<Pair<String, String>> = TrackUtils.sampleSong(trackLength)
+                        val segments: ArrayList<Pair<String, String>> =
+                            TrackUtils.sampleSong(trackLength)
 
                         // Segment is a Pair<String, String>; first is start, second is end.
                         // In time format (e.g. 1:28).
                         // for (segment in segments) {
-                            // updatedAlbumTracks.add(Pair(track, segment))
+                        // updatedAlbumTracks.add(Pair(track, segment))
                         // }
 
                         for (segment in segments) {
@@ -231,7 +235,7 @@ class MainActivity : ComponentActivity() {
                     // But we check for that in the PlayerState subscription block?
                     // I don't know why I've got this here.
                     // if (mainScreenViewModel.currentAlbumTracks.value == updatedAlbumTracks) {
-                        // return@launch
+                    // return@launch
                     // }
 
                     // mainScreenViewModel.setCurrentAlbumTracks(updatedAlbumTracks)
@@ -240,20 +244,19 @@ class MainActivity : ComponentActivity() {
                         mainScreenViewModel.setCurrentAlbumTracks(ArrayList(updatedAlbumTracks))
                     }
 
-                    mainScreenViewModel.setCombinedSpotifyState(
+                    mainScreenViewModel.combinedSpotifyState =
                         SpotifyState(state.track.album.name, updatedAlbumTracks)
-                    )
-                    mainScreenViewModel.setFailedToGetTracks(false)
+                    mainScreenViewModel.failedToGetTracks = false
                 } else {
                     // If the album's tracks is null, then the album is screwed.
-                    mainScreenViewModel.setFailedToGetTracks(true)
+                    mainScreenViewModel.failedToGetTracks = true
                 }
             } catch (e: Exception) {
                 Log.d(
                     "CurrentAlbumTracks",
                     "Failed to get album tracks: ${e}"
                 )
-                mainScreenViewModel.setFailedToGetTracks(true)
+                mainScreenViewModel.failedToGetTracks = true
             }
         }
     }
@@ -266,7 +269,7 @@ class MainActivity : ComponentActivity() {
 
         // 2. Populate the Compose stuff.
         setContent {
-            val colourIndex: Int = mainScreenViewModel.colourIndex.collectAsState().value
+            val colourIndex: Int = mainScreenViewModel.colourIndex
             val spotifyAppRemote = spotifyAppRemote.value
             val publicSpotifyAppApi = publicSpotifyAppApi.value
 
