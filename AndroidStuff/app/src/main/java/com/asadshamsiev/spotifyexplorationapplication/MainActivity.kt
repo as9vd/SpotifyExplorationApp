@@ -48,11 +48,11 @@ import com.asadshamsiev.spotifyexplorationapplication.utils.SimpleTrackWrapper
 import com.asadshamsiev.spotifyexplorationapplication.utils.SpotifyState
 import com.asadshamsiev.spotifyexplorationapplication.utils.TrackUtils
 import com.asadshamsiev.spotifyexplorationapplication.viewmodels.MainScreenViewModel
-//import com.facebook.flipper.android.AndroidFlipperClient
-//import com.facebook.flipper.android.utils.FlipperUtils
-//import com.facebook.flipper.plugins.inspector.DescriptorMapping
-//import com.facebook.flipper.plugins.inspector.InspectorFlipperPlugin
-//import com.facebook.soloader.SoLoader
+import com.facebook.flipper.android.AndroidFlipperClient
+import com.facebook.flipper.android.utils.FlipperUtils
+import com.facebook.flipper.plugins.inspector.DescriptorMapping
+import com.facebook.flipper.plugins.inspector.InspectorFlipperPlugin
+import com.facebook.soloader.SoLoader
 import com.spotify.android.appremote.api.ConnectionParams
 import com.spotify.android.appremote.api.Connector
 import com.spotify.android.appremote.api.SpotifyAppRemote
@@ -93,6 +93,8 @@ class MainActivity : ComponentActivity() {
             override fun onConnected(appRemote: SpotifyAppRemote) {
                 Log.d("SpotifyStuff", "Connected! Finally.")
                 spotifyAppRemote.value = appRemote
+
+                // We'll give the ViewModel the API stuff too.
                 mainScreenViewModel.spotifyAppRemote = appRemote
 
                 // Listen to every single update in the PlayerState.
@@ -134,20 +136,20 @@ class MainActivity : ComponentActivity() {
     // Flipper is used to get more information about the application.
     // This is good for breaking down network calls (lol) and understanding crashes,
     // without having to go through 500k+ Logcat entries.
-//    private fun connectFlipper() {
-//        // I got this from the official Flipper site.
-//        if (BuildConfig.DEBUG && FlipperUtils.shouldEnableFlipper(this)) {
-//            SoLoader.init(this, false)
-//            val client = AndroidFlipperClient.getInstance(this)
-//            client.addPlugin(
-//                InspectorFlipperPlugin(
-//                    applicationContext,
-//                    DescriptorMapping.withDefaults()
-//                )
-//            )
-//            client.start()
-//        }
-//    }
+    private fun connectFlipper() {
+        // I got this from the official Flipper site.
+        if (BuildConfig.DEBUG && FlipperUtils.shouldEnableFlipper(this)) {
+            SoLoader.init(this, false)
+            val client = AndroidFlipperClient.getInstance(this)
+            client.addPlugin(
+                InspectorFlipperPlugin(
+                    applicationContext,
+                    DescriptorMapping.withDefaults()
+                )
+            )
+            client.start()
+        }
+    }
 
     // Step 3 of the onStart() (as of 9/19).
     // Attempts to set up the SpotifyApi (by this Adam Kotzman dude).
@@ -215,18 +217,14 @@ class MainActivity : ComponentActivity() {
                         val segments: ArrayList<Pair<String, String>> =
                             TrackUtils.sampleSong(trackLength)
 
-                        // Segment is a Pair<String, String>; first is start, second is end.
-                        // In time format (e.g. 1:28).
-                        // for (segment in segments) {
-                        // updatedAlbumTracks.add(Pair(track, segment))
-                        // }
-
+                        // We'll add the 3 segments (1 if short) to batchTracks, and partner
+                        // it with the track associated with the segment(s).
                         for (segment in segments) {
                             batchTracks.add(Pair(SimpleTrackWrapper(track), segment))
                         }
 
                         counter++
-                        if (counter % 3 == 0) { // Do it in batches.
+                        if (counter % 3 == 0) { // Do it in batches of 3 tracks each.
                             updatedAlbumTracks.addAll(batchTracks)
                             mainScreenViewModel.setCurrentAlbumTracks(updatedAlbumTracks)
                             batchTracks.clear()
@@ -234,15 +232,6 @@ class MainActivity : ComponentActivity() {
                         }
                     }
 
-                    // Might be redundant?
-                    // If it's the same album, then don't update it.
-                    // But we check for that in the PlayerState subscription block?
-                    // I don't know why I've got this here.
-                    // if (mainScreenViewModel.currentAlbumTracks.value == updatedAlbumTracks) {
-                    // return@launch
-                    // }
-
-                    // mainScreenViewModel.setCurrentAlbumTracks(updatedAlbumTracks)
                     if (batchTracks.size > 0) {
                         updatedAlbumTracks.addAll(batchTracks)
                         mainScreenViewModel.setCurrentAlbumTracks(ArrayList(updatedAlbumTracks))
@@ -269,19 +258,15 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         // 1. Connect flipper.
-//        connectFlipper()
+        connectFlipper()
 
         // 2. Populate the Compose stuff.
         setContent {
             val colourIndex: Int = mainScreenViewModel.colourIndex
-            val spotifyAppRemote = spotifyAppRemote.value
-            val publicSpotifyAppApi = publicSpotifyAppApi.value
 
             AppTheme(colourIndex = colourIndex) {
                 MainScreen(
                     viewModel = mainScreenViewModel
-                    // ,spotifyAppRemote = spotifyAppRemote,
-                    // publicSpotifyAppApi = publicSpotifyAppApi
                 )
             }
         }

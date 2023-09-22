@@ -5,7 +5,6 @@ import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import androidx.compose.animation.Crossfade
-import kotlinx.collections.immutable.ImmutableList
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -36,8 +35,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
@@ -47,7 +45,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -56,36 +53,18 @@ import com.adamratzman.spotify.models.SimpleTrack
 import com.asadshamsiev.spotifyexplorationapplication.utils.SimpleTrackWrapper
 import com.asadshamsiev.spotifyexplorationapplication.utils.TrackUtils
 import com.asadshamsiev.spotifyexplorationapplication.viewmodels.MainScreenViewModel
-import com.spotify.android.appremote.api.SpotifyAppRemote
 
 @SuppressLint("MutableCollectionMutableState")
 @Composable
 fun TrackListSection(
-    // spotifyAppRemote: SpotifyAppRemote? = null,
     viewModel: MainScreenViewModel
 ) {
     val currentAlbumTracks: List<Pair<SimpleTrackWrapper, Pair<String, String>>> =
-        viewModel.currentAlbumTracks
+        remember { viewModel.currentAlbumTracks }
     val tracksInit = currentAlbumTracks.isNotEmpty()
 
-    // This stuff down here is to make sure TrackCards don't get unnecessarily recomposed.
-    // It's like a pyramid, 5 -> 4 -> 3 -> 2 -> 1.
-    val startIndex = remember { mutableStateOf(0) }
-    LaunchedEffect(currentAlbumTracks) {
-        // Pseudocode: for (startIndex to endTrackIndex + 1)
-        // When 1st batch comes in, endTrackIndex = currentAlbumTracks, startIndex still 0.
-        // When 2nd batch comes in, endTrackIndex = currentAlbumTracks, startIndex now 4.
-        // So endTrackIndex is unnecessary. startIndex only updates past first batch (+= 4).
-        // Need a check for if i > endTrackIndex + 1 in loop, for non-multiples of 4.
-        val isFirstBatch: Boolean =
-            (currentAlbumTracks.isNotEmpty()) && (currentAlbumTracks.size < 4)
-        if (!isFirstBatch) {
-            startIndex.value += 4
-        }
-    }
-
     // Isolate the unique tracks.
-    val uniqueTracks = viewModel.uniqueTracks
+    val uniqueTracks = remember { viewModel.uniqueTracks }
 
     if (tracksInit) {
         Column(
@@ -95,8 +74,6 @@ fun TrackListSection(
         ) {
             // This button is the thing that actually starts the sampling.
             ExploreAlbumButton(
-                // currentAlbumTracks = currentAlbumTracks,
-                // spotifyAppRemote = spotifyAppRemote,
                 viewModel = viewModel
             )
 
@@ -116,7 +93,6 @@ fun TrackListSection(
                         // create a TrackCard for it.
                         key(track.track.id) {
                             TrackCard(
-                                // spotifyAppRemote = spotifyAppRemote,
                                 track = track,
                                 viewModel = viewModel
                             )
@@ -149,19 +125,22 @@ fun TrackListSection(
 
 @Composable
 fun TrackCard(
-    // spotifyAppRemote: SpotifyAppRemote? = null,
     track: SimpleTrackWrapper,
     viewModel: MainScreenViewModel
 ) {
     val isPlaying = remember { mutableStateOf(false) }
-    val spotifyAppRemote = viewModel.spotifyAppRemote
+    val spotifyAppRemote = remember { viewModel.spotifyAppRemote }
 
     // If the current track uri is equal to this track's, then it isPlaying, which'll trigger animation.
     LaunchedEffect(track) {
         spotifyAppRemote?.playerApi?.subscribeToPlayerState()?.setEventCallback { state ->
             val validComposable = (state.track != null)
             if (validComposable) {
-                isPlaying.value = (state.track.uri == track.track.uri.uri)
+                val hasChanged = (isPlaying.value != (state.track.uri == track.track.uri.uri))
+                if (hasChanged) {
+                    isPlaying.value = (state.track.uri == track.track.uri.uri)
+                }
+
                 viewModel.isLocalSpotifyDead = false
             }
         }?.setErrorCallback {
@@ -252,8 +231,6 @@ fun TrackCard(
 // TODO: Also, B) podcasts.
 @Composable
 fun ExploreAlbumButton(
-    // spotifyAppRemote: SpotifyAppRemote?,
-    // currentAlbumTracks: ImmutableList<Pair<SimpleTrackWrapper, Pair<String, String>>>,
     viewModel: MainScreenViewModel
 ) {
     val handler = rememberUpdatedState(Handler(Looper.getMainLooper()))

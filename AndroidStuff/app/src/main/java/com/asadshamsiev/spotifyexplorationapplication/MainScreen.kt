@@ -12,29 +12,23 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.adamratzman.spotify.SpotifyAppApi
 import com.asadshamsiev.spotifyexplorationapplication.viewmodels.MainScreenViewModel
-import com.spotify.android.appremote.api.SpotifyAppRemote
 import kotlinx.coroutines.delay
 
 @Composable
 fun MainScreen(
     viewModel: MainScreenViewModel
-    // , spotifyAppRemote: SpotifyAppRemote?,
-    // publicSpotifyAppApi: SpotifyAppApi?
 ) {
     val textFieldQuery = remember { mutableStateOf(UNINIT_STR) }
-    var foundStuff = remember { listOf<List<String>>() }
+    var foundStuff = remember { mutableListOf<List<String>>() }
     val isLoading = remember { mutableStateOf(false) }
     val scrollState = rememberScrollState()
 
-    val spotifyAppRemote = viewModel.spotifyAppRemote
     val publicSpotifyAppApi = viewModel.publicSpotifyAppApi
 
     // Whenever the query gets updated, run this thing.
@@ -47,10 +41,10 @@ fun MainScreen(
 
             // Give it a second before conducting another search.
             delay(1000L)
+            foundStuff.clear()
 
             // Use the public Spotify API to fetch results related to the query.
             val result = viewModel.searchForResult(publicSpotifyAppApi, textFieldQuery.value)
-            foundStuff = listOf()
 
             // If the result isn't null, and the result yields album(s), then it's valid.
             // Otherwise, if it's not valid, then at least it's handled below, with
@@ -70,7 +64,7 @@ fun MainScreen(
                     albumsList.add(listOf(artistName, albumName, image, uri))
                 }
 
-                foundStuff = albumsList
+                foundStuff.addAll(albumsList)
             }
 
             // No longer loading, so no need to show circular loading animation.
@@ -105,14 +99,12 @@ fun MainScreen(
                     AlbumSection(
                         foundStuff = foundStuff,
                         isLoading = isLoading,
-                        // spotifyAppRemote = spotifyAppRemote,
                         textFieldQuery = textFieldQuery,
                         viewModel = viewModel
                     )
 
                     TrackListSection(
-                        // spotifyAppRemote = spotifyAppRemote,
-                        viewModel = viewModel,
+                        viewModel = viewModel
                     )
                 }
             }

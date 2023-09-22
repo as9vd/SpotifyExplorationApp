@@ -52,7 +52,6 @@ fun AlbumSection(
 ) {
     SearchBox(viewModel = viewModel, textFieldQuery = textFieldQuery)
     AlbumCardResults(
-        // spotifyAppRemote = spotifyAppRemote,
         textFieldQuery = textFieldQuery,
         isLoading = isLoading,
         foundStuff = foundStuff,
