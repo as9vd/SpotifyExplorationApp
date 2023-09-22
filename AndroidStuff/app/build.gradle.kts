@@ -20,7 +20,8 @@ android {
             useSupportLibrary = true
         }
 
-        manifestPlaceholders["redirectSchemeName"] = "com.asadshamsiev.spotifyexplorationapplication"
+        manifestPlaceholders["redirectSchemeName"] =
+            "com.asadshamsiev.spotifyexplorationapplication"
         manifestPlaceholders["redirectHostName"] = "callback"
     }
 
@@ -102,6 +103,9 @@ dependencies {
 
     //noinspection UseTomlInstead
     implementation("io.coil-kt:coil-compose:2.4.0")
+
+    // for ImmutableList.
+    implementation("org.jetbrains.kotlinx:kotlinx-collections-immutable:0.3.5")
 }
 
 subprojects {

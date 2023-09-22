@@ -63,6 +63,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.time.withTimeoutOrNull
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
+import okhttp3.internal.immutableListOf
 
 const val UNINIT_STR = ""
 const val clientId = "d6d33d89d3a044618291f268d1eea409"
@@ -227,7 +228,7 @@ class MainActivity : ComponentActivity() {
                         counter++
                         if (counter % 3 == 0) { // Do it in batches.
                             updatedAlbumTracks.addAll(batchTracks)
-                            mainScreenViewModel.setCurrentAlbumTracks(ArrayList(updatedAlbumTracks))
+                            mainScreenViewModel.setCurrentAlbumTracks(updatedAlbumTracks)
                             batchTracks.clear()
                             delay(2000L)
                         }

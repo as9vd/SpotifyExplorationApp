@@ -15,8 +15,10 @@ import com.asadshamsiev.spotifyexplorationapplication.UNINIT_STR
 import com.asadshamsiev.spotifyexplorationapplication.utils.SimpleTrackWrapper
 import com.asadshamsiev.spotifyexplorationapplication.utils.SpotifyState
 import com.spotify.android.appremote.api.SpotifyAppRemote
+import kotlinx.collections.immutable.ImmutableList
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import okhttp3.internal.immutableListOf
 
 @Stable
 class MainScreenViewModel : ViewModel() {
@@ -121,11 +123,11 @@ class MainScreenViewModel : ViewModel() {
         )
     )
 
-    private var _currentAlbumTracks by mutableStateOf(emptyList<Pair<SimpleTrackWrapper, Pair<String, String>>>())
+    private var _currentAlbumTracks by mutableStateOf(listOf<Pair<SimpleTrackWrapper, Pair<String, String>>>())
     val currentAlbumTracks: List<Pair<SimpleTrackWrapper, Pair<String, String>>>
         get() = _currentAlbumTracks
 
-    fun setCurrentAlbumTracks(currentAlbumTracks: ArrayList<Pair<SimpleTrackWrapper, Pair<String, String>>>) {
+    fun setCurrentAlbumTracks(currentAlbumTracks: List<Pair<SimpleTrackWrapper, Pair<String, String>>>) {
         _currentAlbumTracks = currentAlbumTracks
     }
 

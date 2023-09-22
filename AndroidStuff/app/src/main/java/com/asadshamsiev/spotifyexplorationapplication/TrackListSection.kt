@@ -5,7 +5,7 @@ import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import androidx.compose.animation.Crossfade
-import androidx.compose.animation.ExperimentalAnimationApi
+import kotlinx.collections.immutable.ImmutableList
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -95,7 +95,7 @@ fun TrackListSection(
         ) {
             // This button is the thing that actually starts the sampling.
             ExploreAlbumButton(
-                currentAlbumTracks = currentAlbumTracks,
+                // currentAlbumTracks = currentAlbumTracks,
                 // spotifyAppRemote = spotifyAppRemote,
                 viewModel = viewModel
             )
@@ -253,13 +253,15 @@ fun TrackCard(
 @Composable
 fun ExploreAlbumButton(
     // spotifyAppRemote: SpotifyAppRemote?,
-    currentAlbumTracks: List<Pair<SimpleTrackWrapper, Pair<String, String>>>,
+    // currentAlbumTracks: ImmutableList<Pair<SimpleTrackWrapper, Pair<String, String>>>,
     viewModel: MainScreenViewModel
 ) {
     val handler = rememberUpdatedState(Handler(Looper.getMainLooper()))
     val screwed = remember { mutableStateOf(false) }
     val buttonClicked = remember { mutableStateOf(false) }
     val currentIntervalIndex = viewModel.currentIntervalIndex
+
+    val currentAlbumTracks = viewModel.currentAlbumTracks
 
     val trackStartIndices =
         remember { mutableStateOf(findFirstIndicesOfTracks(currentAlbumTracks)) }
