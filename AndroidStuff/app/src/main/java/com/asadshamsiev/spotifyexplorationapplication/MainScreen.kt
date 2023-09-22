@@ -25,14 +25,17 @@ import kotlinx.coroutines.delay
 
 @Composable
 fun MainScreen(
-    viewModel: MainScreenViewModel,
-    spotifyAppRemote: SpotifyAppRemote?,
-    publicSpotifyAppApi: SpotifyAppApi?
+    viewModel: MainScreenViewModel
+    // , spotifyAppRemote: SpotifyAppRemote?,
+    // publicSpotifyAppApi: SpotifyAppApi?
 ) {
     val textFieldQuery = remember { mutableStateOf(UNINIT_STR) }
-    val foundStuff = remember { mutableListOf<List<String>>() }
+    var foundStuff = remember { listOf<List<String>>() }
     val isLoading = remember { mutableStateOf(false) }
     val scrollState = rememberScrollState()
+
+    val spotifyAppRemote = viewModel.spotifyAppRemote
+    val publicSpotifyAppApi = viewModel.publicSpotifyAppApi
 
     // Whenever the query gets updated, run this thing.
     LaunchedEffect(textFieldQuery.value) {
@@ -47,7 +50,7 @@ fun MainScreen(
 
             // Use the public Spotify API to fetch results related to the query.
             val result = viewModel.searchForResult(publicSpotifyAppApi, textFieldQuery.value)
-            foundStuff.clear()
+            foundStuff = listOf()
 
             // If the result isn't null, and the result yields album(s), then it's valid.
             // Otherwise, if it's not valid, then at least it's handled below, with
@@ -67,7 +70,7 @@ fun MainScreen(
                     albumsList.add(listOf(artistName, albumName, image, uri))
                 }
 
-                foundStuff.addAll(albumsList)
+                foundStuff = albumsList
             }
 
             // No longer loading, so no need to show circular loading animation.
@@ -102,13 +105,13 @@ fun MainScreen(
                     AlbumSection(
                         foundStuff = foundStuff,
                         isLoading = isLoading,
-                        spotifyAppRemote = spotifyAppRemote,
+                        // spotifyAppRemote = spotifyAppRemote,
                         textFieldQuery = textFieldQuery,
                         viewModel = viewModel
                     )
 
                     TrackListSection(
-                        spotifyAppRemote = spotifyAppRemote,
+                        // spotifyAppRemote = spotifyAppRemote,
                         viewModel = viewModel,
                     )
                 }

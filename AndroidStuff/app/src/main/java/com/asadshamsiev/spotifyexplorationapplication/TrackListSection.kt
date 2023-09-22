@@ -60,8 +60,8 @@ import com.spotify.android.appremote.api.SpotifyAppRemote
 @SuppressLint("MutableCollectionMutableState")
 @Composable
 fun TrackListSection(
-    spotifyAppRemote: SpotifyAppRemote? = null,
-    viewModel: MainScreenViewModel,
+    // spotifyAppRemote: SpotifyAppRemote? = null,
+    viewModel: MainScreenViewModel
 ) {
     val currentAlbumTracks: List<Pair<SimpleTrack, Pair<String, String>>> =
         viewModel.currentAlbumTracks
@@ -95,7 +95,7 @@ fun TrackListSection(
             // This button is the thing that actually starts the sampling.
             ExploreAlbumButton(
                 currentAlbumTracks = currentAlbumTracks,
-                spotifyAppRemote = spotifyAppRemote,
+                // spotifyAppRemote = spotifyAppRemote,
                 viewModel = viewModel
             )
 
@@ -115,7 +115,7 @@ fun TrackListSection(
                         // create a TrackCard for it.
                         key(track.id) {
                             TrackCard(
-                                spotifyAppRemote = spotifyAppRemote,
+                                // spotifyAppRemote = spotifyAppRemote,
                                 track = track,
                                 viewModel = viewModel
                             )
@@ -148,11 +148,12 @@ fun TrackListSection(
 
 @Composable
 fun TrackCard(
-    spotifyAppRemote: SpotifyAppRemote? = null,
+    // spotifyAppRemote: SpotifyAppRemote? = null,
     track: SimpleTrack,
     viewModel: MainScreenViewModel
 ) {
     val isPlaying = remember { mutableStateOf(false) }
+    val spotifyAppRemote = viewModel.spotifyAppRemote
 
     // If the current track uri is equal to this track's, then it isPlaying, which'll trigger animation.
     LaunchedEffect(track) {
@@ -250,7 +251,7 @@ fun TrackCard(
 // TODO: Also, B) podcasts.
 @Composable
 fun ExploreAlbumButton(
-    spotifyAppRemote: SpotifyAppRemote?,
+    // spotifyAppRemote: SpotifyAppRemote?,
     currentAlbumTracks: List<Pair<SimpleTrack, Pair<String, String>>>,
     viewModel: MainScreenViewModel
 ) {
@@ -265,6 +266,8 @@ fun ExploreAlbumButton(
     LaunchedEffect(currentAlbumTracks) {
         trackStartIndices.value = findFirstIndicesOfTracks(currentAlbumTracks)
     }
+
+    val spotifyAppRemote = viewModel.spotifyAppRemote
 
     // TODO: Fix this shit and the onClick to reflect the new currentAlbumTracks format.
     val checkProgressRunnable = object : Runnable {

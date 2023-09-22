@@ -45,15 +45,14 @@ const val CARD_PADDING = 8
 
 @Composable
 fun AlbumSection(
-    foundStuff: MutableList<List<String>>,
+    foundStuff: List<List<String>>,
     isLoading: MutableState<Boolean>,
-    spotifyAppRemote: SpotifyAppRemote?,
     textFieldQuery: MutableState<String>,
     viewModel: MainScreenViewModel
 ) {
     SearchBox(viewModel = viewModel, textFieldQuery = textFieldQuery)
     AlbumCardResults(
-        spotifyAppRemote = spotifyAppRemote,
+        // spotifyAppRemote = spotifyAppRemote,
         textFieldQuery = textFieldQuery,
         isLoading = isLoading,
         foundStuff = foundStuff,
@@ -111,12 +110,13 @@ fun SearchBox(
 
 @Composable
 fun AlbumCardResults(
-    spotifyAppRemote: SpotifyAppRemote?,
     textFieldQuery: MutableState<String>,
     isLoading: MutableState<Boolean>,
-    foundStuff: MutableList<List<String>>,
+    foundStuff: List<List<String>>,
     viewModel: MainScreenViewModel
 ) {
+    val spotifyAppRemote = viewModel.spotifyAppRemote
+
     when {
         textFieldQuery.value.isEmpty() -> {
             // no-op. If nothing's typed, then just chill.

@@ -13,11 +13,26 @@ import com.adamratzman.spotify.models.SimpleTrack
 import com.adamratzman.spotify.models.SpotifySearchResult
 import com.asadshamsiev.spotifyexplorationapplication.UNINIT_STR
 import com.asadshamsiev.spotifyexplorationapplication.utils.SpotifyState
+import com.spotify.android.appremote.api.SpotifyAppRemote
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 @Stable
 class MainScreenViewModel : ViewModel() {
+    var publicSpotifyAppApi: SpotifyAppApi?
+        get() = _publicSpotifyAppApi.value
+        set(value) {
+            _publicSpotifyAppApi.value = value
+        }
+    private val _publicSpotifyAppApi = mutableStateOf<SpotifyAppApi?>(null)
+
+    var spotifyAppRemote: SpotifyAppRemote?
+        get() = _spotifyAppRemote.value
+        set(value) {
+            _spotifyAppRemote.value = value
+        }
+    private val _spotifyAppRemote = mutableStateOf<SpotifyAppRemote?>(null)
+
     // We'll use this to tell if the local Spotify (1) thing (SpotifyAppRemote) doesn't work.
     var isLocalSpotifyDead: Boolean
         get() = _isLocalSpotifyDead.value

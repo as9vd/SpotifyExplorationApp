@@ -91,6 +91,7 @@ class MainActivity : ComponentActivity() {
             override fun onConnected(appRemote: SpotifyAppRemote) {
                 Log.d("SpotifyStuff", "Connected! Finally.")
                 spotifyAppRemote.value = appRemote
+                mainScreenViewModel.spotifyAppRemote = appRemote
 
                 // Listen to every single update in the PlayerState.
                 // This means whenever the current track, playback speed, or pause status changes,
@@ -156,6 +157,7 @@ class MainActivity : ComponentActivity() {
                 spotifyAppApi(clientId = clientId, clientSecret = clientSecret).build(
                     enableDefaultTokenRefreshProducerIfNoneExists = true
                 )
+            mainScreenViewModel.publicSpotifyAppApi = publicSpotifyAppApi.value
             mainScreenViewModel.isSpotifyApiDead = false
         } catch (e: Exception) {
             Log.e("SpotifyApiError", "Failed to build Spotify public API.", e)
@@ -275,9 +277,9 @@ class MainActivity : ComponentActivity() {
 
             AppTheme(colourIndex = colourIndex) {
                 MainScreen(
-                    viewModel = mainScreenViewModel,
-                    spotifyAppRemote = spotifyAppRemote,
-                    publicSpotifyAppApi = publicSpotifyAppApi
+                    viewModel = mainScreenViewModel
+                    // ,spotifyAppRemote = spotifyAppRemote,
+                    // publicSpotifyAppApi = publicSpotifyAppApi
                 )
             }
         }
