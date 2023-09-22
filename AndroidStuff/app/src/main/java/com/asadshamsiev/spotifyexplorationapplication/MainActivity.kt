@@ -190,6 +190,8 @@ class MainActivity : ComponentActivity() {
                 if (isValidAlbum) {
                     // Originally was val updatedAlbumTracks = arrayListOf<Pair<ArrayList<Pair<String, String>>, SimpleTrack>>()
                     val updatedAlbumTracks = ArrayList<Pair<SimpleTrack, Pair<String, String>>>()
+                    val batchTracks = ArrayList<Pair<SimpleTrack, Pair<String, String>>>()
+                    var counter = 0
 
                     for (track in album!!.tracks) {
                         val trackLength: Int = track.length
@@ -207,23 +209,37 @@ class MainActivity : ComponentActivity() {
 
                         // Segment is a Pair<String, String>; first is start, second is end.
                         // In time format (e.g. 1:28).
+                        // for (segment in segments) {
+                            // updatedAlbumTracks.add(Pair(track, segment))
+                        // }
+
                         for (segment in segments) {
-                            updatedAlbumTracks.add(
-                                Pair(track, segment)
-                            )
+                            batchTracks.add(Pair(track, segment))
                         }
 
+                        counter++
+                        if (counter % 3 == 0) { // Do it in batches.
+                            updatedAlbumTracks.addAll(batchTracks)
+                            mainScreenViewModel.setCurrentAlbumTracks(ArrayList(updatedAlbumTracks))
+                            batchTracks.clear()
+                            delay(2000L)
+                        }
                     }
 
                     // Might be redundant?
                     // If it's the same album, then don't update it.
                     // But we check for that in the PlayerState subscription block?
                     // I don't know why I've got this here.
-                    if (mainScreenViewModel.currentAlbumTracks.value == updatedAlbumTracks) {
-                        return@launch
+                    // if (mainScreenViewModel.currentAlbumTracks.value == updatedAlbumTracks) {
+                        // return@launch
+                    // }
+
+                    // mainScreenViewModel.setCurrentAlbumTracks(updatedAlbumTracks)
+                    if (batchTracks.size > 0) {
+                        updatedAlbumTracks.addAll(batchTracks)
+                        mainScreenViewModel.setCurrentAlbumTracks(ArrayList(updatedAlbumTracks))
                     }
 
-                    mainScreenViewModel.setCurrentAlbumTracks(updatedAlbumTracks)
                     mainScreenViewModel.setCombinedSpotifyState(
                         SpotifyState(state.track.album.name, updatedAlbumTracks)
                     )
