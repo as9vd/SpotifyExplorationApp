@@ -1,6 +1,11 @@
 package com.asadshamsiev.spotifyexplorationapplication.viewmodels
 
 import android.util.Log
+import androidx.compose.runtime.Stable
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import com.adamratzman.spotify.SpotifyAppApi
 import com.adamratzman.spotify.endpoints.pub.SearchApi
@@ -13,6 +18,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.withContext
 
+@Stable
 class MainScreenViewModel : ViewModel() {
     // We'll use this to tell if the local Spotify (1) thing (SpotifyAppRemote) doesn't work.
     val isLocalSpotifyDead: StateFlow<Boolean> get() = _isLocalSpotifyDead
@@ -34,6 +40,14 @@ class MainScreenViewModel : ViewModel() {
     fun setFailedToGetTracks(failedToGetTracks: Boolean) {
         _failedToGetTracks.value = failedToGetTracks
     }
+
+    // If "Explore Button" clicked.
+    private var _isExploreSessionStarted by mutableStateOf(false)
+    val isExploreSessionStarted: Boolean get() = _isExploreSessionStarted
+    fun setIsExploreSessionStarted(newConditional: Boolean) {
+        _isExploreSessionStarted = newConditional
+    }
+
 
     val trackUri: StateFlow<String> get() = _trackUri
     private val _trackUri = MutableStateFlow(UNINIT_STR)
@@ -77,19 +91,37 @@ class MainScreenViewModel : ViewModel() {
             currentAlbumTracks = ArrayList()
         )
     )
+
     fun setCombinedSpotifyState(combinedSpotifyState: SpotifyState) {
         _combinedSpotifyState.value = combinedSpotifyState
     }
 
-    val currentAlbumTracks: StateFlow<ArrayList<Pair<SimpleTrack, Pair<String, String>>>>
+    private var _currentAlbumTracks by mutableStateOf(emptyList<Pair<SimpleTrack, Pair<String, String>>>())
+    val currentAlbumTracks: List<Pair<SimpleTrack, Pair<String, String>>>
         get() = _currentAlbumTracks
-    private val _currentAlbumTracks =
-        MutableStateFlow(ArrayList<Pair<SimpleTrack, Pair<String, String>>>())
+
     fun setCurrentAlbumTracks(currentAlbumTracks: ArrayList<Pair<SimpleTrack, Pair<String, String>>>) {
-        _currentAlbumTracks.value = currentAlbumTracks
+        _currentAlbumTracks = currentAlbumTracks
     }
 
-    suspend fun searchForResult(publicSpotifyAppApi: SpotifyAppApi?, query: String): SpotifySearchResult? {
+    val uniqueTracks: List<SimpleTrack> by derivedStateOf {
+        _currentAlbumTracks.map { it.first }.toSet().toList()
+    }
+
+    val currentIntervalIndex: StateFlow<Int>
+        get() = _currentIntervalIndex
+    private val _currentIntervalIndex =
+        MutableStateFlow(0)
+
+    fun setCurrentIntervalIndex(newIntervalIndex: Int) {
+        _currentIntervalIndex.value = newIntervalIndex
+    }
+
+
+    suspend fun searchForResult(
+        publicSpotifyAppApi: SpotifyAppApi?,
+        query: String
+    ): SpotifySearchResult? {
         var res: SpotifySearchResult? = null
 
         if (publicSpotifyAppApi != null) {

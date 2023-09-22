@@ -77,7 +77,6 @@ fun MainScreen(
 
     val spotifyApiDead = viewModel.isSpotifyApiDead.collectAsState().value
     val localSpotifyDead: Boolean = viewModel.isLocalSpotifyDead.collectAsState().value
-    val exploreSessionStarted = remember { mutableStateOf(false) }
 
     Crossfade(targetState = spotifyApiDead || localSpotifyDead, label = "Error(s) Transition") { state ->
         Column(
@@ -105,14 +104,12 @@ fun MainScreen(
                         isLoading = isLoading,
                         spotifyAppRemote = spotifyAppRemote,
                         textFieldQuery = textFieldQuery,
-                        exploreSessionStarted = exploreSessionStarted,
                         viewModel = viewModel
                     )
 
                     TrackListSection(
                         spotifyAppRemote = spotifyAppRemote,
                         viewModel = viewModel,
-                        exploreSessionStarted = exploreSessionStarted
                     )
                 }
             }

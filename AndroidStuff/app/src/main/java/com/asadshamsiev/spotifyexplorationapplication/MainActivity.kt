@@ -47,11 +47,11 @@ import com.asadshamsiev.spotifyexplorationapplication.ui.theme.AppTheme
 import com.asadshamsiev.spotifyexplorationapplication.utils.SpotifyState
 import com.asadshamsiev.spotifyexplorationapplication.utils.TrackUtils
 import com.asadshamsiev.spotifyexplorationapplication.viewmodels.MainScreenViewModel
-import com.facebook.flipper.android.AndroidFlipperClient
-import com.facebook.flipper.android.utils.FlipperUtils
-import com.facebook.flipper.plugins.inspector.DescriptorMapping
-import com.facebook.flipper.plugins.inspector.InspectorFlipperPlugin
-import com.facebook.soloader.SoLoader
+//import com.facebook.flipper.android.AndroidFlipperClient
+//import com.facebook.flipper.android.utils.FlipperUtils
+//import com.facebook.flipper.plugins.inspector.DescriptorMapping
+//import com.facebook.flipper.plugins.inspector.InspectorFlipperPlugin
+//import com.facebook.soloader.SoLoader
 import com.spotify.android.appremote.api.ConnectionParams
 import com.spotify.android.appremote.api.Connector
 import com.spotify.android.appremote.api.SpotifyAppRemote
@@ -129,20 +129,20 @@ class MainActivity : ComponentActivity() {
     // Flipper is used to get more information about the application.
     // This is good for breaking down network calls (lol) and understanding crashes,
     // without having to go through 500k+ Logcat entries.
-    private fun connectFlipper() {
-        // I got this from the official Flipper site.
-        if (BuildConfig.DEBUG && FlipperUtils.shouldEnableFlipper(this)) {
-            SoLoader.init(this, false)
-            val client = AndroidFlipperClient.getInstance(this)
-            client.addPlugin(
-                InspectorFlipperPlugin(
-                    applicationContext,
-                    DescriptorMapping.withDefaults()
-                )
-            )
-            client.start()
-        }
-    }
+//    private fun connectFlipper() {
+//        // I got this from the official Flipper site.
+//        if (BuildConfig.DEBUG && FlipperUtils.shouldEnableFlipper(this)) {
+//            SoLoader.init(this, false)
+//            val client = AndroidFlipperClient.getInstance(this)
+//            client.addPlugin(
+//                InspectorFlipperPlugin(
+//                    applicationContext,
+//                    DescriptorMapping.withDefaults()
+//                )
+//            )
+//            client.start()
+//        }
+//    }
 
     // Step 3 of the onStart() (as of 9/19).
     // Attempts to set up the SpotifyApi (by this Adam Kotzman dude).
@@ -262,7 +262,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         // 1. Connect flipper.
-        connectFlipper()
+//        connectFlipper()
 
         // 2. Populate the Compose stuff.
         setContent {
