@@ -14,32 +14,34 @@ import com.adamratzman.spotify.models.SpotifySearchResult
 import com.asadshamsiev.spotifyexplorationapplication.UNINIT_STR
 import com.asadshamsiev.spotifyexplorationapplication.utils.SpotifyState
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.withContext
 
 @Stable
 class MainScreenViewModel : ViewModel() {
     // We'll use this to tell if the local Spotify (1) thing (SpotifyAppRemote) doesn't work.
-    val isLocalSpotifyDead: StateFlow<Boolean> get() = _isLocalSpotifyDead
-    private val _isLocalSpotifyDead = MutableStateFlow(false)
-    fun setLocalSpotifyDeadState(isDead: Boolean) {
-        _isLocalSpotifyDead.value = isDead
-    }
+    var isLocalSpotifyDead: Boolean
+        get() = _isLocalSpotifyDead.value
+        private set(value) {
+            _isLocalSpotifyDead.value = value
+        }
+    private val _isLocalSpotifyDead = mutableStateOf(false)
 
     // This'll be for the search stuff (2).
-    val isSpotifyApiDead: StateFlow<Boolean> get() = _isSpotifyApiDead
-    private val _isSpotifyApiDead = MutableStateFlow(false)
-    fun setSpotifyApiDeadState(isDead: Boolean) {
-        _isSpotifyApiDead.value = isDead
-    }
+    var isSpotifyApiDead: Boolean
+        get() = _isSpotifyApiDead.value
+        private set(value) {
+            _isSpotifyApiDead.value = value
+        }
+
+    private val _isSpotifyApiDead = mutableStateOf(false)
 
     // State to indicate if there was an error fetching tracks
-    val failedToGetTracks: StateFlow<Boolean> get() = _failedToGetTracks
-    private val _failedToGetTracks = MutableStateFlow(false)
-    fun setFailedToGetTracks(failedToGetTracks: Boolean) {
-        _failedToGetTracks.value = failedToGetTracks
-    }
+    var failedToGetTracks: Boolean
+        get() = _failedToGetTracks.value
+        private set(value) {
+            _failedToGetTracks.value = value
+        }
+    private val _failedToGetTracks = mutableStateOf(false)
 
     // If "Explore Button" clicked.
     private var _isExploreSessionStarted by mutableStateOf(false)
@@ -48,34 +50,47 @@ class MainScreenViewModel : ViewModel() {
         _isExploreSessionStarted = newConditional
     }
 
-
-    val trackUri: StateFlow<String> get() = _trackUri
-    private val _trackUri = MutableStateFlow(UNINIT_STR)
+    var trackUri: String
+        get() = _trackUri.value
+        private set(value) {
+            _trackUri.value = value
+        }
+    private val _trackUri = mutableStateOf(UNINIT_STR)
     fun setTrackUri(trackUri: String) {
         _trackUri.value = trackUri
     }
 
-    val trackName: StateFlow<String> get() = _trackName
-    private val _trackName = MutableStateFlow(UNINIT_STR)
-    fun setTrackName(trackName: String) {
-        _trackName.value = trackName
-    }
+    var trackName: String
+        get() = _trackName.value
+        private set(value) {
+            _trackName.value = value
+        }
+    private val _trackName = mutableStateOf(UNINIT_STR)
 
-    val albumUri: StateFlow<String> get() = _albumUri
-    private val _albumUri = MutableStateFlow(UNINIT_STR)
+    var albumUri: String
+        get() = _albumUri.value
+        private set(value) {
+            _albumUri.value = value
+        }
+    private val _albumUri = mutableStateOf(UNINIT_STR)
     fun setAlbumUri(albumUri: String) {
         _albumUri.value = albumUri
     }
 
-    val albumName: StateFlow<String> get() = _albumName
-    private val _albumName = MutableStateFlow(UNINIT_STR)
-    fun setAlbumName(albumName: String) {
-        _albumName.value = albumName
-    }
+    var albumName: String
+        get() = _albumName.value
+        private set(value) {
+            _albumName.value = value
+        }
+    private val _albumName = mutableStateOf(UNINIT_STR)
 
     // For changing colours.
-    val colourIndex: StateFlow<Int> get() = _colourIndex
-    private val _colourIndex = MutableStateFlow(0)
+    var colourIndex: Int
+        get() = _colourIndex.value
+        private set(value) {
+            _colourIndex.value = value
+        }
+    private val _colourIndex = mutableStateOf(0)
     fun incrementColourIndex() {
         if (_colourIndex.value == 5) {
             _colourIndex.value = 0
@@ -84,17 +99,17 @@ class MainScreenViewModel : ViewModel() {
         }
     }
 
-    val combinedSpotifyState: StateFlow<SpotifyState> get() = _combinedSpotifyState
-    private val _combinedSpotifyState = MutableStateFlow(
+    var combinedSpotifyState: SpotifyState
+        get() = _combinedSpotifyState.value
+        private set(value) {
+            _combinedSpotifyState.value = value
+        }
+    private val _combinedSpotifyState = mutableStateOf(
         SpotifyState(
             albumName = UNINIT_STR,
             currentAlbumTracks = ArrayList()
         )
     )
-
-    fun setCombinedSpotifyState(combinedSpotifyState: SpotifyState) {
-        _combinedSpotifyState.value = combinedSpotifyState
-    }
 
     private var _currentAlbumTracks by mutableStateOf(emptyList<Pair<SimpleTrack, Pair<String, String>>>())
     val currentAlbumTracks: List<Pair<SimpleTrack, Pair<String, String>>>
@@ -108,15 +123,13 @@ class MainScreenViewModel : ViewModel() {
         _currentAlbumTracks.map { it.first }.toSet().toList()
     }
 
-    val currentIntervalIndex: StateFlow<Int>
-        get() = _currentIntervalIndex
+    var currentIntervalIndex: Int
+        get() = _currentIntervalIndex.value
+        private set(value) {
+            _currentIntervalIndex.value = value
+        }
     private val _currentIntervalIndex =
-        MutableStateFlow(0)
-
-    fun setCurrentIntervalIndex(newIntervalIndex: Int) {
-        _currentIntervalIndex.value = newIntervalIndex
-    }
-
+        mutableStateOf(0)
 
     suspend fun searchForResult(
         publicSpotifyAppApi: SpotifyAppApi?,

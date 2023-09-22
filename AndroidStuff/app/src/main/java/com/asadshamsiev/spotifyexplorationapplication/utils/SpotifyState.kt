@@ -4,5 +4,5 @@ import com.adamratzman.spotify.models.SimpleTrack
 
 data class SpotifyState(
     val albumName: String,
-    val currentAlbumTracks: ArrayList<Pair<SimpleTrack, Pair<String, String>>>
+    val currentAlbumTracks: List<Pair<SimpleTrack, Pair<String, String>>>
 )
