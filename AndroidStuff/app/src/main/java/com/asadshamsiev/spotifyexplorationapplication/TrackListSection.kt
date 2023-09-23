@@ -59,6 +59,7 @@ import com.asadshamsiev.spotifyexplorationapplication.viewmodels.MainScreenViewM
 @Composable
 fun TrackListSection(
     viewModel: MainScreenViewModel,
+    isLoadingTracks: Boolean,
     batchIndex: Int
 ) {
     val uniqueTracks = viewModel.uniqueTracks
@@ -76,11 +77,12 @@ fun TrackListSection(
         ) {
             // This button is the thing that actually starts the sampling.
             val currentIntervalIndex = viewModel.currentIntervalIndex
-
-            ExploreAlbumButton(
-                viewModel = viewModel,
-                currentIntervalIndex = currentIntervalIndex
-            )
+            if (!isLoadingTracks) {
+                ExploreAlbumButton(
+                    viewModel = viewModel,
+                    currentIntervalIndex = currentIntervalIndex
+                )
+            }
 
             Spacer(modifier = Modifier.size(8.dp))
             Box(Modifier.border(BorderStroke(1.dp, Color.Black))) {

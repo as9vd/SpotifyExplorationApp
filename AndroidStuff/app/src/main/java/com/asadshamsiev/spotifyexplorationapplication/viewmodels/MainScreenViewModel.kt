@@ -169,4 +169,5 @@ class MainScreenViewModel : ViewModel() {
     }
 
     var handleAlbumChangeJob: Job? = null
+    var loadingTracks: MutableState<Boolean> = mutableStateOf(false)
 }

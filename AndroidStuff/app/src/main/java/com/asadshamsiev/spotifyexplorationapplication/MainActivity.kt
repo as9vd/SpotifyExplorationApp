@@ -210,6 +210,7 @@ class MainActivity : ComponentActivity() {
                 val album =
                     publicSpotifyAppApi.value?.albums?.getAlbum(currAlbumUri)
                 val isValidAlbum: Boolean = (album?.tracks != null)
+                mainScreenViewModel.loadingTracks.value = true
 
                 if (isValidAlbum) {
                     // Originally was val updatedAlbumTracks = arrayListOf<Pair<ArrayList<Pair<String, String>>, SimpleTrack>>()
@@ -265,12 +266,15 @@ class MainActivity : ComponentActivity() {
                     // If the album's tracks is null, then the album is screwed.
                     mainScreenViewModel.failedToGetTracks = true
                 }
+
+                mainScreenViewModel.loadingTracks.value = false
             } catch (e: Exception) {
                 Log.d(
                     "CurrentAlbumTracks",
                     "Failed to get album tracks: ${e}"
                 )
                 mainScreenViewModel.failedToGetTracks = true
+                mainScreenViewModel.loadingTracks.value = false
             }
         }
     }
@@ -284,10 +288,12 @@ class MainActivity : ComponentActivity() {
         // 2. Populate the Compose stuff.
         setContent {
             val colourIndex: Int = mainScreenViewModel.colourIndex
+            val isTracksLoading = mainScreenViewModel.loadingTracks
 
             AppTheme(colourIndex = colourIndex) {
                 MainScreen(
                     viewModel = mainScreenViewModel,
+                    loadingTracks = isTracksLoading.value,
                     batchIndex = batchIndex.value
                 )
             }

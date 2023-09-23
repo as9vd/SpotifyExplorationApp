@@ -23,6 +23,7 @@ import kotlinx.coroutines.delay
 @Composable
 fun MainScreen(
     viewModel: MainScreenViewModel,
+    loadingTracks: Boolean,
     batchIndex: Int
 ) {
     val textFieldQuery = remember { mutableStateOf(UNINIT_STR) }
@@ -106,6 +107,7 @@ fun MainScreen(
 
                     TrackListSection(
                         viewModel = viewModel,
+                        isLoadingTracks = loadingTracks,
                         batchIndex = batchIndex
                     )
                 }
