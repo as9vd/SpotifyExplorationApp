@@ -74,8 +74,11 @@ fun TrackListSection(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             // This button is the thing that actually starts the sampling.
+            val currentIntervalIndex = viewModel.currentIntervalIndex
+
             ExploreAlbumButton(
-                viewModel = viewModel
+                viewModel = viewModel,
+                currentIntervalIndex = currentIntervalIndex
             )
 
             Spacer(modifier = Modifier.size(8.dp))
@@ -177,7 +180,7 @@ fun TrackCard(
                     // Clicking a track will interrupt an explore session.
                     // Even if the remote API can't call it. Makes no difference. It will be false.
                     viewModel.setIsExploreSessionStarted(false)
-                    viewModel.currentIntervalIndex = 0 // Sets index to 0.
+                    viewModel.currentIntervalIndex.value = 0 // Sets index to 0.
                 }
                 .fillMaxWidth()
         ) {
@@ -211,12 +214,12 @@ fun TrackCard(
 // TODO: Also, B) podcasts.
 @Composable
 fun ExploreAlbumButton(
-    viewModel: MainScreenViewModel
+    viewModel: MainScreenViewModel,
+    currentIntervalIndex: MutableState<Int>
 ) {
     val handler = rememberUpdatedState(Handler(Looper.getMainLooper()))
     val screwed = remember { mutableStateOf(false) }
     val buttonClicked = remember { mutableStateOf(false) }
-    val currentIntervalIndex = viewModel.currentIntervalIndex
 
     val currentAlbumTracks = viewModel.currentAlbumTracks
 
@@ -239,25 +242,25 @@ fun ExploreAlbumButton(
 
                         // This is the paired interval (e.g. <"1:28", "2:56">).
                         val currentInterval =
-                            currentAlbumTracks[currentIntervalIndex].second
+                            currentAlbumTracks[currentIntervalIndex.value].second
 
                         val endOfCurrentInterval: Long =
                             TrackUtils.durationToMs(currentInterval.second)
 
                         // If we're past the interval, then move on to the next one.
                         if (currentPosition >= endOfCurrentInterval) {
-                            viewModel.currentIntervalIndex = currentIntervalIndex + 1
+                            viewModel.currentIntervalIndex.value = currentIntervalIndex.value + 1
 
                             // If there's another interval to be played, then play it.
                             val amountOfIntervals: Int = currentAlbumTracks.size
-                            val isAtEnd: Boolean = currentIntervalIndex >= amountOfIntervals
+                            val isAtEnd: Boolean = currentIntervalIndex.value >= amountOfIntervals
                             if (!isAtEnd) {
                                 val trackToBePlayed =
-                                    currentAlbumTracks[currentIntervalIndex].first
+                                    currentAlbumTracks[currentIntervalIndex.value].first
                                 val previousTrackPlayed =
-                                    currentAlbumTracks[currentIntervalIndex - 1].first
+                                    currentAlbumTracks[currentIntervalIndex.value - 1].first
                                 val nextInterval =
-                                    currentAlbumTracks[currentIntervalIndex].second
+                                    currentAlbumTracks[currentIntervalIndex.value].second
                                 val startOfNextInterval: Long =
                                     TrackUtils.durationToMs(nextInterval.first)
 
@@ -314,7 +317,7 @@ fun ExploreAlbumButton(
         val remoteApiConnected = (spotifyAppRemote != null && spotifyAppRemote.isConnected)
         if (!viewModel.isExploreSessionStarted && remoteApiConnected) {
             // Reset the index. Will start from the beginning, at the top of the list.
-            viewModel.currentIntervalIndex = 0
+            viewModel.currentIntervalIndex.value = 0
 
             // Get the first track and its uri, because we'll play it.
             val firstTrack = currentAlbumTracks[0].first
@@ -322,7 +325,7 @@ fun ExploreAlbumButton(
 
             spotifyAppRemote!!.playerApi.play(firstTrackUri)
                 ?.apply {
-                    val initialInterval = currentAlbumTracks[currentIntervalIndex].second
+                    val initialInterval = currentAlbumTracks[currentIntervalIndex.value].second
                     val startOfFirstInterval = TrackUtils.durationToMs(initialInterval.first)
 
                     handler.value.postDelayed({
@@ -341,7 +344,7 @@ fun ExploreAlbumButton(
             buttonClicked.value = true
         } else if (remoteApiConnected) {
             spotifyAppRemote?.playerApi?.pause()
-            // TODO: Fix this so the skipping stuff stops when no longer in exploration mode.
+
             handler.value.removeCallbacks(checkProgressRunnable)
             screwed.value = false
             buttonClicked.value = false
@@ -363,11 +366,11 @@ fun ExploreAlbumButton(
         if (!viewModel.isExploreSessionStarted) {
             try {
                 handler.value.removeCallbacks(checkProgressRunnable)
-                viewModel.currentIntervalIndex = 0
+                viewModel.currentIntervalIndex.value = 0
 
                 // Go back to the first song.
                 val firstTrackInAlbum: SimpleTrack =
-                    currentAlbumTracks[currentIntervalIndex].first.track
+                    currentAlbumTracks[currentIntervalIndex.value].first.track
                 spotifyAppRemote?.playerApi?.play(firstTrackInAlbum.uri.uri)
                 spotifyAppRemote?.playerApi?.pause()
             } catch (e: Exception) {
@@ -377,8 +380,8 @@ fun ExploreAlbumButton(
     }
 
     val currentTrack =
-        if (currentIntervalIndex < currentAlbumTracks.size) {
-            currentAlbumTracks[currentIntervalIndex].first
+        if (currentIntervalIndex.value < currentAlbumTracks.size) {
+            currentAlbumTracks[currentIntervalIndex.value].first
         } else {
             null
         }
@@ -414,7 +417,7 @@ fun ExploreAlbumButton(
                     val duration = "${interval.first} - ${interval.second}"
 
                     Crossfade(
-                        targetState = (i == currentIntervalIndex),
+                        targetState = (i == currentIntervalIndex.value),
                         label = "Transition Active Interval"
                     ) { isSelected ->
                         val containerColor =

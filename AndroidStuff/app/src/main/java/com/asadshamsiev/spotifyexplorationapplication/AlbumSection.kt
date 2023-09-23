@@ -36,7 +36,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.asadshamsiev.spotifyexplorationapplication.viewmodels.MainScreenViewModel
-import com.spotify.android.appremote.api.SpotifyAppRemote
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -154,6 +153,7 @@ fun AlbumCardResults(
     }
 }
 
+// TODO: Give AlbumCard a cool animation when clicked.
 @Composable
 fun AlbumCard(
     artistName: String,
@@ -164,24 +164,12 @@ fun AlbumCard(
 ) {
     // When the shit is clicked, it needs to animate.
     val targetScale = remember { mutableStateOf(1f) }
-//    val scale: Float by animateFloatAsState(
-//        targetValue = targetScale.value,
-//        animationSpec = spring(
-//            dampingRatio = Spring.DampingRatioMediumBouncy,
-//            stiffness = Spring.StiffnessMedium
-//        ),
-//        label = "Shrink Album Card"
-//    )
 
     Card(
         border = BorderStroke(1.dp, Color.Black),
         modifier = modifier
             .fillMaxWidth()
             .padding(0.dp)
-//            .graphicsLayer(
-//                scaleX = scale,
-//                scaleY = scale
-//            )
             .pointerInput(Unit) {
                 detectTapGestures(
                     onPress = {

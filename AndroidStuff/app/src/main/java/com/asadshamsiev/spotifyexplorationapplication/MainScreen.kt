@@ -12,7 +12,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -27,7 +26,7 @@ fun MainScreen(
     batchIndex: Int
 ) {
     val textFieldQuery = remember { mutableStateOf(UNINIT_STR) }
-    var foundStuff = remember { mutableListOf<List<String>>() }
+    val foundStuff = remember { mutableListOf<List<String>>() }
     val isLoading = remember { mutableStateOf(false) }
     val scrollState = rememberScrollState()
 

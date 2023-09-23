@@ -1,6 +1,7 @@
 package com.asadshamsiev.spotifyexplorationapplication.viewmodels
 
 import android.util.Log
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -134,12 +135,12 @@ class MainScreenViewModel : ViewModel() {
 
     var uniqueTracks: List<SimpleTrackWrapper>? = null
 
-    var currentIntervalIndex: Int
-        get() = _currentIntervalIndex.value
+    var currentIntervalIndex: MutableState<Int>
+        get() = _currentIntervalIndex
         set(value) {
-            _currentIntervalIndex.value = value
+            _currentIntervalIndex = value
         }
-    private val _currentIntervalIndex =
+    private var _currentIntervalIndex =
         mutableStateOf(0)
 
     suspend fun searchForResult(
