@@ -52,7 +52,7 @@ fun AlbumSection(
 ) {
     SearchBox(viewModel = viewModel, textFieldQuery = textFieldQuery)
     AlbumCardResults(
-        textFieldQuery = textFieldQuery,
+        textFieldEmpty = textFieldQuery.value.isEmpty(),
         isLoading = isLoading,
         foundStuff = foundStuff,
         viewModel = viewModel
@@ -109,7 +109,7 @@ fun SearchBox(
 
 @Composable
 fun AlbumCardResults(
-    textFieldQuery: MutableState<String>,
+    textFieldEmpty: Boolean,
     isLoading: MutableState<Boolean>,
     foundStuff: List<List<String>>,
     viewModel: MainScreenViewModel
@@ -117,7 +117,7 @@ fun AlbumCardResults(
     val spotifyAppRemote = viewModel.spotifyAppRemote
 
     when {
-        textFieldQuery.value.isEmpty() -> {
+        textFieldEmpty -> {
             // no-op. If nothing's typed, then just chill.
         }
 
@@ -164,24 +164,24 @@ fun AlbumCard(
 ) {
     // When the shit is clicked, it needs to animate.
     val targetScale = remember { mutableStateOf(1f) }
-    val scale: Float by animateFloatAsState(
-        targetValue = targetScale.value,
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioMediumBouncy,
-            stiffness = Spring.StiffnessMedium
-        ),
-        label = "Shrink Album Card"
-    )
+//    val scale: Float by animateFloatAsState(
+//        targetValue = targetScale.value,
+//        animationSpec = spring(
+//            dampingRatio = Spring.DampingRatioMediumBouncy,
+//            stiffness = Spring.StiffnessMedium
+//        ),
+//        label = "Shrink Album Card"
+//    )
 
     Card(
         border = BorderStroke(1.dp, Color.Black),
         modifier = modifier
             .fillMaxWidth()
             .padding(0.dp)
-            .graphicsLayer(
-                scaleX = scale,
-                scaleY = scale
-            )
+//            .graphicsLayer(
+//                scaleX = scale,
+//                scaleY = scale
+//            )
             .pointerInput(Unit) {
                 detectTapGestures(
                     onPress = {

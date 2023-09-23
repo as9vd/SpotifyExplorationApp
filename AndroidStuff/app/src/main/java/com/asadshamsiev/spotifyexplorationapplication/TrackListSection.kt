@@ -44,6 +44,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontStyle
@@ -61,11 +62,10 @@ fun TrackListSection(
     viewModel: MainScreenViewModel,
     batchIndex: Int
 ) {
-    // val currentAlbumTracks: List<Pair<SimpleTrackWrapper, Pair<String, String>>> = viewModel.currentAlbumTracks
     val uniqueTracks = viewModel.uniqueTracks
     val tracksInit = uniqueTracks?.isNotEmpty()
 
-    Text("${uniqueTracks?.size}, idx: ${batchIndex}, good: ${tracksInit}")
+    Text("innit: ${tracksInit}, idx: ${batchIndex}, unq_size: ${uniqueTracks?.size}")
 
     if (tracksInit == true) {
         Column(
@@ -89,24 +89,22 @@ fun TrackListSection(
                             .fillMaxWidth()
                     )
 
-                    if (uniqueTracks != null) {
-                        for (track in uniqueTracks) {
-                            // For each track in the current album,
-                            // create a TrackCard for it.
-                            key(track.track.id) {
-                                TrackCard(
-                                    track = track,
-                                    viewModel = viewModel
-                                )
+                    for (track in uniqueTracks) {
+                        // For each track in the current album,
+                        // create a TrackCard for it.
+                        key(track.track.id) {
+                            TrackCard(
+                                track = track,
+                                viewModel = viewModel
+                            )
 
-                                // Manual border, because it's not like HTML/CSS at all.
-                                Divider(
-                                    color = Color.Black,
-                                    modifier = Modifier
-                                        .height(1.dp)
-                                        .fillMaxWidth()
-                                )
-                            }
+                            // Manual border, because it's not like HTML/CSS at all.
+                            Divider(
+                                color = Color.Black,
+                                modifier = Modifier
+                                    .height(1.dp)
+                                    .fillMaxWidth()
+                            )
                         }
                     }
                 }
@@ -126,12 +124,17 @@ fun TrackListSection(
     Spacer(modifier = Modifier.size(8.dp)) // A little space on the bottom.
 }
 
+// TODO: Give the transition a cooler animation.
 @Composable
 fun TrackCard(
     track: SimpleTrackWrapper,
     viewModel: MainScreenViewModel
 ) {
-    val isPlaying = remember { mutableStateOf(false) }
+    val isPlaying = remember {
+        derivedStateOf {
+            viewModel.trackUri == track.track.uri.uri
+        }
+    }
     val spotifyAppRemote = remember { viewModel.spotifyAppRemote }
 
     // If the current track uri is equal to this track's, then it isPlaying, which'll trigger animation.
@@ -139,11 +142,6 @@ fun TrackCard(
         spotifyAppRemote?.playerApi?.subscribeToPlayerState()?.setEventCallback { state ->
             val validComposable = (state.track != null)
             if (validComposable) {
-                val hasChanged = (isPlaying.value != (state.track.uri == track.track.uri.uri))
-                if (hasChanged) {
-                    isPlaying.value = (state.track.uri == track.track.uri.uri)
-                }
-
                 viewModel.isLocalSpotifyDead = false
             }
         }?.setErrorCallback {
@@ -154,68 +152,47 @@ fun TrackCard(
 
     }
 
-    val infiniteTransition = rememberInfiniteTransition(label = "Harlem Shake (Infinite Edition)")
-    // val shake by infiniteTransition.animateFloat(
-    // initialValue = -20f,
-    // targetValue = 20f,
-    // animationSpec = infiniteRepeatable(
-    // animation = tween(75, easing = LinearEasing),
-    // repeatMode = RepeatMode.Reverse
-    // ), label = "Harlem Shake"
-    // )
-
     val screwed = remember { mutableStateOf(false) }
 
-    Card(
-        shape = RoundedCornerShape(0), modifier = Modifier
-            .clickable {
-                try {
-                    spotifyAppRemote?.playerApi
-                        ?.play(track.track.uri.uri)
-                        ?.setErrorCallback {
-                            Log.d("it", it.toString())
-                        }
-                    screwed.value = false
-                } catch (e: Exception) {
-                    Log.d("onClick", "Can't play specified song: $e")
-                    screwed.value = true
-                }
+    Crossfade(
+        targetState = isPlaying.value,
+        label = "Transition the Bone",
+        animationSpec = tween(1000)
+    ) { playing ->
+        Card(
+            shape = RoundedCornerShape(0), modifier = Modifier
+                .clickable {
+                    try {
+                        spotifyAppRemote?.playerApi
+                            ?.play(track.track.uri.uri)
+                            ?.setErrorCallback {
+                                Log.d("it", it.toString())
+                            }
+                        screwed.value = false
+                    } catch (e: Exception) {
+                        Log.d("onClick", "Can't play specified song: $e")
+                        screwed.value = true
+                    }
 
-                // Clicking a track will interrupt an explore session.
-                // Even if the remote API can't call it. Makes no difference. It will be false.
-                viewModel.setIsExploreSessionStarted(false)
-                viewModel.currentIntervalIndex = 0 // Sets index to 0.
-            }
-            .fillMaxWidth()
-    ) {
-        Box(contentAlignment = Alignment.Center) {
-            Crossfade(
-                targetState = isPlaying.value,
-                label = "Transition the Bone",
-                animationSpec = tween(1000)
-            ) { playing ->
+                    // Clicking a track will interrupt an explore session.
+                    // Even if the remote API can't call it. Makes no difference. It will be false.
+                    viewModel.setIsExploreSessionStarted(false)
+                    viewModel.currentIntervalIndex = 0 // Sets index to 0.
+                }
+                .fillMaxWidth()
+        ) {
+            Box(contentAlignment = Alignment.Center) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    // if (!playing) {
+                    val fontWeight = if (playing) 700 else 400
+
                     Text(
-                        "${track.track.trackNumber}. ${playing}",
+                        "${track.track.trackNumber}.",
+                        fontWeight = FontWeight(fontWeight),
                         modifier = Modifier
                             .padding(12.dp)
                             .weight(0.15f),
                         textAlign = TextAlign.Center
                     )
-                    // } else {
-                    // If the track is playing, show a bone instead of the track, and shake!
-                    // Text(
-                    // "🦴",
-                    // modifier = Modifier
-                    // .padding(12.dp)
-                    // .weight(0.15f)
-                    // .graphicsLayer(rotationZ = shake),
-                    // textAlign = TextAlign.Center
-                    // )
-                    // }
-
-                    val fontWeight = if (isPlaying.value) 700 else 400
                     Text(
                         "${track.track.name} (${TrackUtils.msToDuration(track.track.length)})",
                         fontWeight = FontWeight(fontWeight),
