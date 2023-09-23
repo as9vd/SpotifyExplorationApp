@@ -59,12 +59,11 @@ import com.asadshamsiev.spotifyexplorationapplication.viewmodels.MainScreenViewM
 fun TrackListSection(
     viewModel: MainScreenViewModel
 ) {
-    val currentAlbumTracks: List<Pair<SimpleTrackWrapper, Pair<String, String>>> =
-        remember { viewModel.currentAlbumTracks }
+    val currentAlbumTracks: List<Pair<SimpleTrackWrapper, Pair<String, String>>> = viewModel.currentAlbumTracks
     val tracksInit = currentAlbumTracks.isNotEmpty()
 
     // Isolate the unique tracks.
-    val uniqueTracks = remember { viewModel.uniqueTracks }
+    val uniqueTracks = viewModel.uniqueTracks
 
     if (tracksInit) {
         Column(
