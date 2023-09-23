@@ -76,6 +76,8 @@ class MainActivity : ComponentActivity() {
     private var spotifyAppRemote: MutableState<SpotifyAppRemote?> = mutableStateOf(null)
     private var publicSpotifyAppApi: MutableState<SpotifyAppApi?> = mutableStateOf(null)
 
+    private var batchIndex = mutableStateOf(0)
+
     override fun onStart() {
         super.onStart()
 
@@ -229,12 +231,18 @@ class MainActivity : ComponentActivity() {
                             mainScreenViewModel.setCurrentAlbumTracks(updatedAlbumTracks)
                             batchTracks.clear()
                             delay(2000L)
+
+                            // This is to force recomposition of MainScreen.
+                            batchIndex.value += 1
                         }
                     }
 
                     if (batchTracks.size > 0) {
                         updatedAlbumTracks.addAll(batchTracks)
                         mainScreenViewModel.setCurrentAlbumTracks(ArrayList(updatedAlbumTracks))
+
+                        // For the remaining tracks..
+                        batchIndex.value += 1
                     }
 
                     mainScreenViewModel.combinedSpotifyState =
@@ -266,7 +274,8 @@ class MainActivity : ComponentActivity() {
 
             AppTheme(colourIndex = colourIndex) {
                 MainScreen(
-                    viewModel = mainScreenViewModel
+                    viewModel = mainScreenViewModel,
+                    batchIndex = batchIndex.value
                 )
             }
         }

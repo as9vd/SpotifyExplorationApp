@@ -125,7 +125,7 @@ class MainScreenViewModel : ViewModel() {
 
     private var _currentAlbumTracks by mutableStateOf(listOf<Pair<SimpleTrackWrapper, Pair<String, String>>>())
     val currentAlbumTracks: List<Pair<SimpleTrackWrapper, Pair<String, String>>>
-        get() = _currentAlbumTracks
+         get() = _currentAlbumTracks
 
     fun setCurrentAlbumTracks(currentAlbumTracks: List<Pair<SimpleTrackWrapper, Pair<String, String>>>) {
         _currentAlbumTracks = currentAlbumTracks

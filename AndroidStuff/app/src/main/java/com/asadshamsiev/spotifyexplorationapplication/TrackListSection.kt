@@ -35,6 +35,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
@@ -57,13 +58,16 @@ import com.asadshamsiev.spotifyexplorationapplication.viewmodels.MainScreenViewM
 @SuppressLint("MutableCollectionMutableState")
 @Composable
 fun TrackListSection(
-    viewModel: MainScreenViewModel
+    viewModel: MainScreenViewModel,
+    batchIndex: Int
 ) {
     val currentAlbumTracks: List<Pair<SimpleTrackWrapper, Pair<String, String>>> = viewModel.currentAlbumTracks
     val tracksInit = currentAlbumTracks.isNotEmpty()
 
     // Isolate the unique tracks.
     val uniqueTracks = viewModel.uniqueTracks
+
+    Text("${uniqueTracks.size}, idx: ${batchIndex}")
 
     if (tracksInit) {
         Column(
@@ -151,14 +155,14 @@ fun TrackCard(
     }
 
     val infiniteTransition = rememberInfiniteTransition(label = "Harlem Shake (Infinite Edition)")
-    val shake by infiniteTransition.animateFloat(
-        initialValue = -20f,
-        targetValue = 20f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(75, easing = LinearEasing),
-            repeatMode = RepeatMode.Reverse
-        ), label = "Harlem Shake"
-    )
+    // val shake by infiniteTransition.animateFloat(
+        // initialValue = -20f,
+        // targetValue = 20f,
+        // animationSpec = infiniteRepeatable(
+            // animation = tween(75, easing = LinearEasing),
+            // repeatMode = RepeatMode.Reverse
+        // ), label = "Harlem Shake"
+    // )
 
     val screwed = remember { mutableStateOf(false) }
 
@@ -191,25 +195,25 @@ fun TrackCard(
                 animationSpec = tween(1000)
             ) { playing ->
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    if (!playing) {
+                    // if (!playing) {
                         Text(
-                            "${track.track.trackNumber}.",
+                            "${track.track.trackNumber}. ${playing}",
                             modifier = Modifier
                                 .padding(12.dp)
                                 .weight(0.15f),
                             textAlign = TextAlign.Center
                         )
-                    } else {
+                    // } else {
                         // If the track is playing, show a bone instead of the track, and shake!
-                        Text(
-                            "🦴",
-                            modifier = Modifier
-                                .padding(12.dp)
-                                .weight(0.15f)
-                                .graphicsLayer(rotationZ = shake),
-                            textAlign = TextAlign.Center
-                        )
-                    }
+                        // Text(
+                            // "🦴",
+                            // modifier = Modifier
+                                // .padding(12.dp)
+                                // .weight(0.15f)
+                                // .graphicsLayer(rotationZ = shake),
+                            // textAlign = TextAlign.Center
+                        // )
+                    // }
 
                     val fontWeight = if (isPlaying.value) 700 else 400
                     Text(
