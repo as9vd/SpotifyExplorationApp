@@ -61,15 +61,13 @@ fun TrackListSection(
     viewModel: MainScreenViewModel,
     batchIndex: Int
 ) {
-    val currentAlbumTracks: List<Pair<SimpleTrackWrapper, Pair<String, String>>> = viewModel.currentAlbumTracks
-    val tracksInit = currentAlbumTracks.isNotEmpty()
-
-    // Isolate the unique tracks.
+    // val currentAlbumTracks: List<Pair<SimpleTrackWrapper, Pair<String, String>>> = viewModel.currentAlbumTracks
     val uniqueTracks = viewModel.uniqueTracks
+    val tracksInit = uniqueTracks?.isNotEmpty()
 
-    Text("${uniqueTracks.size}, idx: ${batchIndex}")
+    Text("${uniqueTracks?.size}, idx: ${batchIndex}, good: ${tracksInit}")
 
-    if (tracksInit) {
+    if (tracksInit == true) {
         Column(
             modifier = Modifier.fillMaxSize(),
             verticalArrangement = Arrangement.Center,
@@ -91,22 +89,24 @@ fun TrackListSection(
                             .fillMaxWidth()
                     )
 
-                    for (track in uniqueTracks) {
-                        // For each track in the current album,
-                        // create a TrackCard for it.
-                        key(track.track.id) {
-                            TrackCard(
-                                track = track,
-                                viewModel = viewModel
-                            )
+                    if (uniqueTracks != null) {
+                        for (track in uniqueTracks) {
+                            // For each track in the current album,
+                            // create a TrackCard for it.
+                            key(track.track.id) {
+                                TrackCard(
+                                    track = track,
+                                    viewModel = viewModel
+                                )
 
-                            // Manual border, because it's not like HTML/CSS at all.
-                            Divider(
-                                color = Color.Black,
-                                modifier = Modifier
-                                    .height(1.dp)
-                                    .fillMaxWidth()
-                            )
+                                // Manual border, because it's not like HTML/CSS at all.
+                                Divider(
+                                    color = Color.Black,
+                                    modifier = Modifier
+                                        .height(1.dp)
+                                        .fillMaxWidth()
+                                )
+                            }
                         }
                     }
                 }
@@ -156,12 +156,12 @@ fun TrackCard(
 
     val infiniteTransition = rememberInfiniteTransition(label = "Harlem Shake (Infinite Edition)")
     // val shake by infiniteTransition.animateFloat(
-        // initialValue = -20f,
-        // targetValue = 20f,
-        // animationSpec = infiniteRepeatable(
-            // animation = tween(75, easing = LinearEasing),
-            // repeatMode = RepeatMode.Reverse
-        // ), label = "Harlem Shake"
+    // initialValue = -20f,
+    // targetValue = 20f,
+    // animationSpec = infiniteRepeatable(
+    // animation = tween(75, easing = LinearEasing),
+    // repeatMode = RepeatMode.Reverse
+    // ), label = "Harlem Shake"
     // )
 
     val screwed = remember { mutableStateOf(false) }
@@ -196,23 +196,23 @@ fun TrackCard(
             ) { playing ->
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     // if (!playing) {
-                        Text(
-                            "${track.track.trackNumber}. ${playing}",
-                            modifier = Modifier
-                                .padding(12.dp)
-                                .weight(0.15f),
-                            textAlign = TextAlign.Center
-                        )
+                    Text(
+                        "${track.track.trackNumber}. ${playing}",
+                        modifier = Modifier
+                            .padding(12.dp)
+                            .weight(0.15f),
+                        textAlign = TextAlign.Center
+                    )
                     // } else {
-                        // If the track is playing, show a bone instead of the track, and shake!
-                        // Text(
-                            // "🦴",
-                            // modifier = Modifier
-                                // .padding(12.dp)
-                                // .weight(0.15f)
-                                // .graphicsLayer(rotationZ = shake),
-                            // textAlign = TextAlign.Center
-                        // )
+                    // If the track is playing, show a bone instead of the track, and shake!
+                    // Text(
+                    // "🦴",
+                    // modifier = Modifier
+                    // .padding(12.dp)
+                    // .weight(0.15f)
+                    // .graphicsLayer(rotationZ = shake),
+                    // textAlign = TextAlign.Center
+                    // )
                     // }
 
                     val fontWeight = if (isPlaying.value) 700 else 400

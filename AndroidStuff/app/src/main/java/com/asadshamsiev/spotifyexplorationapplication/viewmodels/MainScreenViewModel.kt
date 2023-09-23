@@ -129,11 +129,10 @@ class MainScreenViewModel : ViewModel() {
 
     fun setCurrentAlbumTracks(currentAlbumTracks: List<Pair<SimpleTrackWrapper, Pair<String, String>>>) {
         _currentAlbumTracks = currentAlbumTracks
+        uniqueTracks =_currentAlbumTracks.map { it.first }.toSet().toList()
     }
 
-    val uniqueTracks: List<SimpleTrackWrapper> by derivedStateOf {
-        _currentAlbumTracks.map { it.first }.toSet().toList()
-    }
+    var uniqueTracks: List<SimpleTrackWrapper>? = null
 
     var currentIntervalIndex: Int
         get() = _currentIntervalIndex.value

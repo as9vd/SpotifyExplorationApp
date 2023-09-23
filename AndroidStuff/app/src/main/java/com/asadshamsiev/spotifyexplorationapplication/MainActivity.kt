@@ -189,6 +189,8 @@ class MainActivity : ComponentActivity() {
         mainScreenViewModel.albumUri = state.track.album.uri
         mainScreenViewModel.albumName = state.track.album.name
 
+        batchIndex.value = 0
+
         lifecycleScope.launch {
             Log.d("AlbumUri", "Album changed!")
             try {
