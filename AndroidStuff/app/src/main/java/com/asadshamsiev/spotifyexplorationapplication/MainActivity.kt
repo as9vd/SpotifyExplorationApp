@@ -58,8 +58,10 @@ import com.spotify.android.appremote.api.Connector
 import com.spotify.android.appremote.api.SpotifyAppRemote
 import com.spotify.protocol.types.PlayerState
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.selects.select
 import kotlinx.coroutines.time.withTimeoutOrNull
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
@@ -184,15 +186,24 @@ class MainActivity : ComponentActivity() {
         mainScreenViewModel.trackName = state.track.name
     }
 
+    private fun resetCurrentAlbumTracks() {
+        mainScreenViewModel.setCurrentAlbumTracks(ArrayList())
+    }
+
     private fun handleAlbumChange(state: PlayerState) {
+        mainScreenViewModel.handleAlbumChangeJob?.cancel()
+
         // Obviously, update the current album uri and name.
         mainScreenViewModel.albumUri = state.track.album.uri
         mainScreenViewModel.albumName = state.track.album.name
 
+        resetCurrentAlbumTracks()
+
         batchIndex.value = 0
 
-        lifecycleScope.launch {
+        mainScreenViewModel.handleAlbumChangeJob = lifecycleScope.launch {
             Log.d("AlbumUri", "Album changed!")
+
             try {
                 // This is the uri of the album we've just started playing.
                 val currAlbumUri: String = mainScreenViewModel.albumUri

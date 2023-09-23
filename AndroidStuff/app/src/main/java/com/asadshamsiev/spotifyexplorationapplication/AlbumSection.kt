@@ -52,7 +52,7 @@ fun AlbumSection(
     textFieldQuery: MutableState<String>,
     viewModel: MainScreenViewModel
 ) {
-    val textFieldEmpty = remember { derivedStateOf { textFieldQuery.value.isEmpty() }}
+    val textFieldEmpty = remember { derivedStateOf { textFieldQuery.value.isEmpty() } }
 
     SearchBox(viewModel = viewModel, textFieldQuery = textFieldQuery)
     AlbumCardResults(

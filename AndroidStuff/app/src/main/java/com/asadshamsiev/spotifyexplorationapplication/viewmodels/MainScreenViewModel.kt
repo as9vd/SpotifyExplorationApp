@@ -18,6 +18,7 @@ import com.asadshamsiev.spotifyexplorationapplication.utils.SpotifyState
 import com.spotify.android.appremote.api.SpotifyAppRemote
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.withContext
 import okhttp3.internal.immutableListOf
 
@@ -166,4 +167,6 @@ class MainScreenViewModel : ViewModel() {
 
         return res
     }
+
+    var handleAlbumChangeJob: Job? = null
 }
