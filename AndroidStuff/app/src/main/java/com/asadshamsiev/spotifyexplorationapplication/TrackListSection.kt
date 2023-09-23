@@ -4,13 +4,14 @@ import android.annotation.SuppressLint
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.FiniteAnimationSpec
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -37,19 +38,17 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.derivedStateOf
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.adamratzman.spotify.models.SimpleTrack
 import com.asadshamsiev.spotifyexplorationapplication.utils.SimpleTrackWrapper
@@ -65,7 +64,9 @@ fun TrackListSection(
     val uniqueTracks = viewModel.uniqueTracks
     val tracksInit = uniqueTracks?.isNotEmpty()
 
-    Text("innit: ${tracksInit}, idx: ${batchIndex}, unq_size: ${uniqueTracks?.size}")
+    // This is useless. All it does is ensure that this thing is forced to recompose when batchIndex
+    // updates. I'll need a better way to do that in the future.
+    val batchIndexFiller = batchIndex
 
     if (tracksInit == true) {
         Column(
@@ -93,21 +94,33 @@ fun TrackListSection(
                     )
 
                     for (track in uniqueTracks) {
+                        val isVisible = remember { mutableStateOf(false) }
+                        LaunchedEffect(track.track.id) {
+                            isVisible.value = true
+                        }
+
                         // For each track in the current album,
                         // create a TrackCard for it.
-                        key(track.track.id) {
-                            TrackCard(
-                                track = track,
-                                viewModel = viewModel
+                        AnimatedVisibility(
+                            visible = isVisible.value,
+                            enter = fadeIn() + slideInVertically(
+                                initialOffsetY = { -20 }
                             )
+                        ) {
+                            key(track.track.id) {
+                                TrackCard(
+                                    track = track,
+                                    viewModel = viewModel
+                                )
 
-                            // Manual border, because it's not like HTML/CSS at all.
-                            Divider(
-                                color = Color.Black,
-                                modifier = Modifier
-                                    .height(1.dp)
-                                    .fillMaxWidth()
-                            )
+                                // Manual border.
+                                Divider(
+                                    color = Color.Black,
+                                    modifier = Modifier
+                                        .height(1.dp)
+                                        .fillMaxWidth()
+                                )
+                            }
                         }
                     }
                 }
@@ -157,34 +170,35 @@ fun TrackCard(
 
     val screwed = remember { mutableStateOf(false) }
 
-    Crossfade(
-        targetState = isPlaying.value,
-        label = "Transition the Bone",
-        animationSpec = tween(1000)
-    ) { playing ->
-        Card(
-            shape = RoundedCornerShape(0), modifier = Modifier
-                .clickable {
-                    try {
-                        spotifyAppRemote?.playerApi
-                            ?.play(track.track.uri.uri)
-                            ?.setErrorCallback {
-                                Log.d("it", it.toString())
-                            }
-                        screwed.value = false
-                    } catch (e: Exception) {
-                        Log.d("onClick", "Can't play specified song: $e")
-                        screwed.value = true
-                    }
 
-                    // Clicking a track will interrupt an explore session.
-                    // Even if the remote API can't call it. Makes no difference. It will be false.
-                    viewModel.setIsExploreSessionStarted(false)
-                    viewModel.currentIntervalIndex.value = 0 // Sets index to 0.
+    Card(
+        shape = RoundedCornerShape(0), modifier = Modifier
+            .clickable {
+                try {
+                    spotifyAppRemote?.playerApi
+                        ?.play(track.track.uri.uri)
+                        ?.setErrorCallback {
+                            Log.d("it", it.toString())
+                        }
+                    screwed.value = false
+                } catch (e: Exception) {
+                    Log.d("onClick", "Can't play specified song: $e")
+                    screwed.value = true
                 }
-                .fillMaxWidth()
-        ) {
-            Box(contentAlignment = Alignment.Center) {
+
+                // Clicking a track will interrupt an explore session.
+                // Even if the remote API can't call it. Makes no difference. It will be false.
+                viewModel.setIsExploreSessionStarted(false)
+                viewModel.currentIntervalIndex.value = 0 // Sets index to 0.
+            }
+            .fillMaxWidth()
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            Crossfade(
+                targetState = isPlaying.value,
+                label = "Transition the Bone",
+                animationSpec = tween(250)
+            ) { playing ->
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     val fontWeight = if (playing) 700 else 400
 
@@ -221,18 +235,12 @@ fun ExploreAlbumButton(
     val screwed = remember { mutableStateOf(false) }
     val buttonClicked = remember { mutableStateOf(false) }
 
-    val currentAlbumTracks = viewModel.currentAlbumTracks
-
+    val currentAlbumTracks = remember { viewModel.currentAlbumTracks }
     val trackStartIndices =
-        remember { mutableStateOf(findFirstIndicesOfTracks(currentAlbumTracks)) }
-
-    LaunchedEffect(currentAlbumTracks) {
-        trackStartIndices.value = findFirstIndicesOfTracks(currentAlbumTracks)
-    }
+        remember { derivedStateOf { findFirstIndicesOfTracks(currentAlbumTracks) } }
 
     val spotifyAppRemote = viewModel.spotifyAppRemote
 
-    // TODO: Fix this shit and the onClick to reflect the new currentAlbumTracks format.
     val checkProgressRunnable = object : Runnable {
         override fun run() {
             if (spotifyAppRemote != null && spotifyAppRemote.isConnected) {
@@ -410,6 +418,7 @@ fun ExploreAlbumButton(
             var i = trackStartIndices.value[currentTrack?.track?.id]
             val amountOfIntervals = currentAlbumTracks.size
             if (i != null) {
+                // Iterate until the next 3 tracks pretty much.
                 while (i < amountOfIntervals && currentAlbumTracks[i].first == currentTrack) {
                     val interval = currentAlbumTracks[i].second
 

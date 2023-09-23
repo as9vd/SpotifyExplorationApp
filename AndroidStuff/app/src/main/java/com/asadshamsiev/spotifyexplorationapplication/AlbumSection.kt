@@ -1,8 +1,10 @@
 package com.asadshamsiev.spotifyexplorationapplication
 
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -23,6 +25,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -49,9 +52,11 @@ fun AlbumSection(
     textFieldQuery: MutableState<String>,
     viewModel: MainScreenViewModel
 ) {
+    val textFieldEmpty = remember { derivedStateOf { textFieldQuery.value.isEmpty() }}
+
     SearchBox(viewModel = viewModel, textFieldQuery = textFieldQuery)
     AlbumCardResults(
-        textFieldEmpty = textFieldQuery.value.isEmpty(),
+        textFieldEmpty = textFieldEmpty.value,
         isLoading = isLoading,
         foundStuff = foundStuff,
         viewModel = viewModel
@@ -162,9 +167,6 @@ fun AlbumCard(
     link: String, // These'll eventually need defaults for if it craps out.
     modifier: Modifier = Modifier
 ) {
-    // When the shit is clicked, it needs to animate.
-    val targetScale = remember { mutableStateOf(1f) }
-
     Card(
         border = BorderStroke(1.dp, Color.Black),
         modifier = modifier
@@ -173,14 +175,7 @@ fun AlbumCard(
             .pointerInput(Unit) {
                 detectTapGestures(
                     onPress = {
-                        targetScale.value = 0.95f
-                        // Capture the gesture until it's released.
-                        val success = tryAwaitRelease()
-                        // When released, scale back up to original size.
-                        if (success) {
-                            targetScale.value = 1f
-                            onClick()
-                        }
+                        onClick()
                     }
                 )
             },

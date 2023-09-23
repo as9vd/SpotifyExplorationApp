@@ -228,11 +228,11 @@ class MainActivity : ComponentActivity() {
                         }
 
                         counter++
-                        if (counter % 2 == 0) { // Do it in batches of 3 tracks each.
+                        if (counter % 1 == 0) { // Do it in batches of 3 tracks each.
                             updatedAlbumTracks.addAll(batchTracks)
                             mainScreenViewModel.setCurrentAlbumTracks(updatedAlbumTracks)
                             batchTracks.clear()
-                            delay(1000L)
+                            delay(500L)
 
                             // This is to force recomposition of MainScreen.
                             batchIndex.value += 1

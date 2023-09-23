@@ -40,8 +40,8 @@ fun MainScreen(
             // In order to show a loading Composable whilst results are fetched.
             isLoading.value = true
 
-            // Give it a second before conducting another search.
-            delay(1000L)
+            // Give it 2 seconds before conducting another search.
+            delay(2000L)
             foundStuff.clear()
 
             // Use the public Spotify API to fetch results related to the query.
