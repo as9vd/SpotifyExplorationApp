@@ -41,7 +41,7 @@ class TrackUtils {
             val numPeriod = 3
 
             val targetLength =
-                ((totalLengthMillis - 5000) * 0.575).toInt() // A little offset so doesn't go to end.
+                ((totalLengthMillis - 5000) * 0.53).toInt() // A little offset so doesn't go to end.
             val segmentLength = targetLength / numPeriod
             val thirdOfSong = totalLengthMillis / numPeriod
 

@@ -69,6 +69,16 @@ fun SearchBox(
     viewModel: MainScreenViewModel,
     textFieldQuery: MutableState<String>
 ) {
+    AllSeeingGorilla(viewModel = viewModel)
+    TextField(
+        value = textFieldQuery.value,
+        placeholder = { Text("Click to start typing!", fontSize = 18.sp) },
+        onValueChange = { textFieldQuery.value = it }
+    )
+}
+
+@Composable
+fun AllSeeingGorilla(viewModel: MainScreenViewModel) {
     val coroutineScope = rememberCoroutineScope()
 
     // This'll make the All-Seeing Gorilla get big when clicked!
@@ -99,15 +109,6 @@ fun SearchBox(
                 )
             }
             .graphicsLayer(scaleX = scale, scaleY = scale)
-    )
-    TextField(
-        value = textFieldQuery.value,
-        placeholder = {
-            Text("Click to start typing!", fontSize = 18.sp)
-        },
-        onValueChange = {
-            textFieldQuery.value = it
-        }
     )
 }
 

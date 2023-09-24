@@ -38,6 +38,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.State
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
@@ -56,6 +57,7 @@ import com.adamratzman.spotify.models.SimpleTrack
 import com.asadshamsiev.spotifyexplorationapplication.utils.SimpleTrackWrapper
 import com.asadshamsiev.spotifyexplorationapplication.utils.TrackUtils
 import com.asadshamsiev.spotifyexplorationapplication.viewmodels.MainScreenViewModel
+import com.spotify.android.appremote.api.SpotifyAppRemote
 
 @SuppressLint("MutableCollectionMutableState")
 @Composable
@@ -84,7 +86,8 @@ fun TrackListSection(
                 verticalArrangement = Arrangement.Top,
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Crossfade(targetState = isLoadingTracks, animationSpec = tween(750),
+                Crossfade(
+                    targetState = isLoadingTracks, animationSpec = tween(750),
                     label = "Show Explore Album"
                 ) { isLoading ->
                     if (!isLoading) {
@@ -97,40 +100,7 @@ fun TrackListSection(
             }
 
             Spacer(modifier = Modifier.size(8.dp))
-            Box(Modifier.border(BorderStroke(1.dp, Color.Black))) {
-                Column {
-                    for (track in uniqueTracks) {
-                        val isVisible = remember { mutableStateOf(false) }
-                        LaunchedEffect(track.track.id) {
-                            isVisible.value = true
-                        }
-
-                        // For each track in the current album,
-                        // create a TrackCard for it.
-                        AnimatedVisibility(
-                            visible = isVisible.value,
-                            enter = fadeIn() + slideInVertically(
-                                initialOffsetY = { -20 }
-                            )
-                        ) {
-                            key(track.track.id) {
-                                TrackCard(
-                                    track = track,
-                                    viewModel = viewModel
-                                )
-
-                                // Manual border.
-                                Divider(
-                                    color = Color.Black,
-                                    modifier = Modifier
-                                        .height(1.dp)
-                                        .fillMaxWidth()
-                                )
-                            }
-                        }
-                    }
-                }
-            }
+            TrackList(uniqueTracks = uniqueTracks, viewModel = viewModel)
             Spacer(modifier = Modifier.size(8.dp))
         }
     } else {
@@ -144,6 +114,44 @@ fun TrackListSection(
     }
 
     Spacer(modifier = Modifier.size(8.dp)) // A little space on the bottom.
+}
+
+@Composable
+fun TrackList(uniqueTracks: List<SimpleTrackWrapper>, viewModel: MainScreenViewModel) {
+    Box(Modifier.border(BorderStroke(1.dp, Color.Black))) {
+        Column {
+            for (track in uniqueTracks) {
+                val isVisible = remember { mutableStateOf(false) }
+                LaunchedEffect(track.track.id) {
+                    isVisible.value = true
+                }
+
+                // For each track in the current album,
+                // create a TrackCard for it.
+                AnimatedVisibility(
+                    visible = isVisible.value,
+                    enter = fadeIn() + slideInVertically(
+                        initialOffsetY = { -20 }
+                    )
+                ) {
+                    key(track.track.id) {
+                        TrackCard(
+                            track = track,
+                            viewModel = viewModel
+                        )
+
+                        // Manual border.
+                        Divider(
+                            color = Color.Black,
+                            modifier = Modifier
+                                .height(1.dp)
+                                .fillMaxWidth()
+                        )
+                    }
+                }
+            }
+        }
+    }
 }
 
 // TODO: Give the transition a cooler animation.
@@ -205,7 +213,7 @@ fun TrackCard(
                 animationSpec = tween(250)
             ) { playing ->
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    val fontWeight = if (playing) 700 else 400
+                    val fontWeight = if (playing) 900 else 400
 
                     Text(
                         "${track.track.trackNumber}.",
@@ -237,7 +245,6 @@ fun ExploreAlbumButton(
     currentIntervalIndex: MutableState<Int>
 ) {
     val handler = rememberUpdatedState(Handler(Looper.getMainLooper()))
-    val screwed = remember { mutableStateOf(false) }
     val buttonClicked = remember { mutableStateOf(false) }
 
     val currentAlbumTracks = remember { viewModel.currentAlbumTracks }
@@ -246,7 +253,154 @@ fun ExploreAlbumButton(
 
     val spotifyAppRemote = viewModel.spotifyAppRemote
 
-    val checkProgressRunnable = object : Runnable {
+    val checkProgressRunnable = getProgressRunnable(
+        spotifyAppRemote = spotifyAppRemote,
+        currentAlbumTracks = currentAlbumTracks,
+        currentIntervalIndex = currentIntervalIndex,
+        viewModel = viewModel,
+        handler = handler
+    )
+
+    val onClick = getButtonOnClickFunction(
+        spotifyAppRemote = spotifyAppRemote,
+        currentAlbumTracks = currentAlbumTracks,
+        viewModel = viewModel,
+        handler = handler,
+        buttonClicked = buttonClicked,
+        currentIntervalIndex = currentIntervalIndex,
+        checkProgressRunnable = checkProgressRunnable
+    )
+
+    // If the button is clicked, and the explore session is ended, then remove all the stuff, and pause.
+    LaunchedEffect(buttonClicked.value) {
+        if (!viewModel.isExploreSessionStarted) {
+            try {
+                handler.value.removeCallbacks(checkProgressRunnable)
+                viewModel.currentIntervalIndex.value = 0
+
+                // Go back to the first song.
+                val firstTrackInAlbum: SimpleTrack =
+                    currentAlbumTracks[currentIntervalIndex.value].first.track
+                spotifyAppRemote?.playerApi?.play(firstTrackInAlbum.uri.uri)
+                spotifyAppRemote?.playerApi?.pause()
+            } catch (e: Exception) {
+                Log.d("removeCallbacks", "Callback unsuccessfully removed: $e")
+            }
+        }
+    }
+
+    val currentTrack =
+        if (currentIntervalIndex.value < currentAlbumTracks.size) {
+            currentAlbumTracks[currentIntervalIndex.value].first
+        } else {
+            null
+        }
+
+    Column(
+        verticalArrangement = Arrangement.Top,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        if (!viewModel.isExploreSessionStarted) {
+            Button(
+                elevation = ButtonDefaults.elevatedButtonElevation(),
+                border = BorderStroke(1.dp, Color.Black),
+                onClick = onClick
+            ) {
+                Text("Start Exploring")
+            }
+
+        } else {
+            Column(
+                verticalArrangement = Arrangement.Top,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Button(
+                    elevation = ButtonDefaults.elevatedButtonElevation(),
+                    border = BorderStroke(1.dp, Color.Black),
+                    onClick = onClick
+                ) {
+                    Text("Stop Exploring")
+                }
+
+                Spacer(modifier = Modifier.size(8.dp))
+
+                // This is the durations you see when an exploration session is started.
+                DurationCards(trackStartIndices, currentAlbumTracks, currentIntervalIndex, currentTrack)
+            }
+        }
+    }
+}
+
+@Composable
+fun DurationCards(
+    trackStartIndices: State<Map<String, Int>>,
+    currentAlbumTracks: List<Pair<SimpleTrackWrapper, Pair<String, String>>>,
+    currentIntervalIndex: MutableState<Int>,
+    currentTrack: SimpleTrackWrapper?
+) {
+    // Give it a little crossfade so it doesn't abruptly enter/leave.
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        var i = trackStartIndices.value[currentTrack?.track?.id]
+        val amountOfIntervals = currentAlbumTracks.size
+        if (i != null) {
+            // Iterate until the next 3 tracks pretty much.
+            while (i < amountOfIntervals && currentAlbumTracks[i].first == currentTrack) {
+                val interval = currentAlbumTracks[i].second
+
+                // For each interval we've got for the song (3 for > 45 seconds), create a duration card for it.
+                val duration = "${interval.first} - ${interval.second}"
+
+                Crossfade(
+                    targetState = (i == currentIntervalIndex.value),
+                    label = "Transition Active Interval"
+                ) { isSelected ->
+                    val containerColor =
+                        if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface
+
+                    Card(
+                        border = BorderStroke(1.dp, Color.Black),
+                        colors = CardDefaults.cardColors(
+                            containerColor = containerColor
+                        ),
+                        shape = RoundedCornerShape(0),
+                    ) {
+                        Text(
+                            duration,
+                            modifier = Modifier.padding(4.dp),
+                            fontWeight = FontWeight(400)
+                        )
+                    }
+                }
+
+                i++
+            }
+        }
+    }
+}
+
+fun findFirstIndicesOfTracks(currentAlbumTracks: List<Pair<SimpleTrackWrapper, Pair<String, String>>>): Map<String, Int> {
+    val seenTracks = mutableSetOf<String>()
+    val firstIndices = mutableMapOf<String, Int>()
+
+    currentAlbumTracks.forEachIndexed { index, (track, _) ->
+        val trackId = track.track.id
+        if (trackId !in seenTracks) {
+            seenTracks.add(trackId)
+            firstIndices[trackId] = index
+        }
+    }
+
+    return firstIndices
+}
+
+fun getProgressRunnable(
+    spotifyAppRemote: SpotifyAppRemote?,
+    currentAlbumTracks: List<Pair<SimpleTrackWrapper, Pair<String, String>>>,
+    currentIntervalIndex: MutableState<Int>,
+    viewModel: MainScreenViewModel,
+    handler: State<Handler>
+): Runnable {
+    return object : Runnable {
         override fun run() {
             if (spotifyAppRemote != null && spotifyAppRemote.isConnected) {
                 try {
@@ -307,26 +461,33 @@ fun ExploreAlbumButton(
 
                         if (viewModel.isExploreSessionStarted) {
                             handler.value.postDelayed(this, 500)
-                            screwed.value = false
                         }
                     }?.setErrorCallback {
                         Log.d("it", it.toString())
                     }
                 } catch (e: Exception) {
                     Log.d("checkProgressRunnable", "checkProgressRunnable failed: $e")
-                    screwed.value = true
                 }
             } else {
                 Log.d(
                     "checkProgressRunnable",
                     "checkProgressRunnable failed, as SpotifyAppRemote is either null or not connected."
                 )
-                screwed.value = true
             }
         }
     }
+}
 
-    val onClick: () -> Unit = {
+fun getButtonOnClickFunction(
+    spotifyAppRemote: SpotifyAppRemote?,
+    currentAlbumTracks: List<Pair<SimpleTrackWrapper, Pair<String, String>>>,
+    viewModel: MainScreenViewModel,
+    handler: State<Handler>,
+    buttonClicked: MutableState<Boolean>,
+    currentIntervalIndex: MutableState<Int>,
+    checkProgressRunnable: Runnable
+): () -> Unit {
+    return {
         val remoteApiConnected = (spotifyAppRemote != null && spotifyAppRemote.isConnected)
         if (!viewModel.isExploreSessionStarted && remoteApiConnected) {
             // Reset the index. Will start from the beginning, at the top of the list.
@@ -353,135 +514,21 @@ fun ExploreAlbumButton(
                     // If you can't play this, then the local API is screwed.
                     viewModel.isLocalSpotifyDead = true
                 }
-            screwed.value = false
             buttonClicked.value = true
         } else if (remoteApiConnected) {
             spotifyAppRemote?.playerApi?.pause()
 
             handler.value.removeCallbacks(checkProgressRunnable)
-            screwed.value = false
             buttonClicked.value = false
 
             viewModel.isLocalSpotifyDead = false
         } else {
             handler.value.removeCallbacks(checkProgressRunnable) // Just in case.
             Log.d("onClick", "Remote API not connected!")
-            screwed.value = true
 
             viewModel.isLocalSpotifyDead = true
         }
 
         viewModel.setIsExploreSessionStarted(!viewModel.isExploreSessionStarted)
     }
-
-    // If the button is clicked, and the explore session is ended, then remove all the stuff, and pause.
-    LaunchedEffect(buttonClicked.value) {
-        if (!viewModel.isExploreSessionStarted) {
-            try {
-                handler.value.removeCallbacks(checkProgressRunnable)
-                viewModel.currentIntervalIndex.value = 0
-
-                // Go back to the first song.
-                val firstTrackInAlbum: SimpleTrack =
-                    currentAlbumTracks[currentIntervalIndex.value].first.track
-                spotifyAppRemote?.playerApi?.play(firstTrackInAlbum.uri.uri)
-                spotifyAppRemote?.playerApi?.pause()
-            } catch (e: Exception) {
-                Log.d("removeCallbacks", "Callback unsuccessfully removed: $e")
-            }
-        }
-    }
-
-    val currentTrack =
-        if (currentIntervalIndex.value < currentAlbumTracks.size) {
-            currentAlbumTracks[currentIntervalIndex.value].first
-        } else {
-            null
-        }
-
-    Column(
-        verticalArrangement = Arrangement.Top,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        if (!viewModel.isExploreSessionStarted) {
-
-            Button(
-                elevation = ButtonDefaults.elevatedButtonElevation(),
-                border = BorderStroke(1.dp, Color.Black),
-                onClick = onClick
-            ) {
-                Text("Start Exploring")
-            }
-
-        } else {
-            Column(
-                verticalArrangement = Arrangement.Top,
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Button(
-                    elevation = ButtonDefaults.elevatedButtonElevation(),
-                    border = BorderStroke(1.dp, Color.Black),
-                    onClick = onClick
-                ) {
-                    Text("Stop Exploring")
-                }
-
-                Spacer(modifier = Modifier.size(8.dp))
-
-                // Give it a little crossfade so it doesn't abruptly enter/leave.
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    var i = trackStartIndices.value[currentTrack?.track?.id]
-                    val amountOfIntervals = currentAlbumTracks.size
-                    if (i != null) {
-                        // Iterate until the next 3 tracks pretty much.
-                        while (i < amountOfIntervals && currentAlbumTracks[i].first == currentTrack) {
-                            val interval = currentAlbumTracks[i].second
-
-                            // For each interval we've got for the song (3 for > 45 seconds), create a duration card for it.
-                            val duration = "${interval.first} - ${interval.second}"
-
-                            Crossfade(
-                                targetState = (i == currentIntervalIndex.value),
-                                label = "Transition Active Interval"
-                            ) { isSelected ->
-                                val containerColor =
-                                    if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface
-
-                                Card(
-                                    border = BorderStroke(1.dp, Color.Black),
-                                    colors = CardDefaults.cardColors(
-                                        containerColor = containerColor
-                                    ),
-                                    shape = RoundedCornerShape(0),
-                                ) {
-                                    Text(
-                                        duration,
-                                        modifier = Modifier.padding(4.dp),
-                                        fontWeight = FontWeight(400)
-                                    )
-                                }
-                            }
-
-                            i++
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-fun findFirstIndicesOfTracks(currentAlbumTracks: List<Pair<SimpleTrackWrapper, Pair<String, String>>>): Map<String, Int> {
-    val seenTracks = mutableSetOf<String>()
-    val firstIndices = mutableMapOf<String, Int>()
-
-    currentAlbumTracks.forEachIndexed { index, (track, _) ->
-        val trackId = track.track.id
-        if (trackId !in seenTracks) {
-            seenTracks.add(trackId)
-            firstIndices[trackId] = index
-        }
-    }
-
-    return firstIndices
 }

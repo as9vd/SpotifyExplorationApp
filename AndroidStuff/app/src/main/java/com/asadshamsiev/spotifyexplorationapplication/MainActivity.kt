@@ -186,10 +186,6 @@ class MainActivity : ComponentActivity() {
         mainScreenViewModel.trackName = state.track.name
     }
 
-    private fun resetCurrentAlbumTracks() {
-        mainScreenViewModel.setCurrentAlbumTracks(ArrayList())
-    }
-
     private fun handleAlbumChange(state: PlayerState) {
         mainScreenViewModel.handleAlbumChangeJob?.cancel()
 
@@ -197,8 +193,11 @@ class MainActivity : ComponentActivity() {
         mainScreenViewModel.albumUri = state.track.album.uri
         mainScreenViewModel.albumName = state.track.album.name
 
-        resetCurrentAlbumTracks()
+        // Reset current album tracks.
+        // Thankfully, this is assuming the album changes, so no unnecessary work here.
+        mainScreenViewModel.setCurrentAlbumTracks(ArrayList())
 
+        // Kick off the batches. We're at 0 now.
         batchIndex.value = 0
 
         mainScreenViewModel.handleAlbumChangeJob = lifecycleScope.launch {
@@ -209,7 +208,12 @@ class MainActivity : ComponentActivity() {
                 val currAlbumUri: String = mainScreenViewModel.albumUri
                 val album =
                     publicSpotifyAppApi.value?.albums?.getAlbum(currAlbumUri)
+
+                // If the album's tracks aren't null, then the album exists,
+                // so we can start iterating.
                 val isValidAlbum: Boolean = (album?.tracks != null)
+
+                // Update state so the Explore Button doesn't show up whilst fetching.
                 mainScreenViewModel.loadingTracks.value = true
 
                 if (isValidAlbum) {
@@ -267,6 +271,7 @@ class MainActivity : ComponentActivity() {
                     mainScreenViewModel.failedToGetTracks = true
                 }
 
+                // No longer loading.
                 mainScreenViewModel.loadingTracks.value = false
             } catch (e: Exception) {
                 Log.d(
