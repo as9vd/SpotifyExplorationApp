@@ -83,20 +83,15 @@ fun TrackListSection(
             Column(
                 verticalArrangement = Arrangement.Top,
                 horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.height(88.dp)
             ) {
-                Crossfade(
-                    targetState = isLoadingTracks,
-                    animationSpec = tween(durationMillis = 500, easing = FastOutSlowInEasing),
-                    label = "Loading to Button"
+                Crossfade(targetState = isLoadingTracks, animationSpec = tween(750),
+                    label = "Show Explore Album"
                 ) { isLoading ->
                     if (!isLoading) {
                         ExploreAlbumButton(
                             viewModel = viewModel,
                             currentIntervalIndex = currentIntervalIndex
                         )
-                    } else {
-
                     }
                 }
             }
@@ -410,13 +405,13 @@ fun ExploreAlbumButton(
     ) {
         if (!viewModel.isExploreSessionStarted) {
 
-                Button(
-                    elevation = ButtonDefaults.elevatedButtonElevation(),
-                    border = BorderStroke(1.dp, Color.Black),
-                    onClick = onClick
-                ) {
-                    Text("Start Exploring")
-                }
+            Button(
+                elevation = ButtonDefaults.elevatedButtonElevation(),
+                border = BorderStroke(1.dp, Color.Black),
+                onClick = onClick
+            ) {
+                Text("Start Exploring")
+            }
 
         } else {
             Column(
