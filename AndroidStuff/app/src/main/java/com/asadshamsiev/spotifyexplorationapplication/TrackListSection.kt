@@ -77,12 +77,20 @@ fun TrackListSection(
         ) {
             // This button is the thing that actually starts the sampling.
             val currentIntervalIndex = viewModel.currentIntervalIndex
-            if (!isLoadingTracks) {
-                ExploreAlbumButton(
-                    viewModel = viewModel,
-                    currentIntervalIndex = currentIntervalIndex
-                )
+
+            Crossfade(
+                targetState = isLoadingTracks, animationSpec = tween(durationMillis = 1500)
+            ) { isLoading ->
+                if (isLoading) {
+                    Text("Loading tracks..")
+                } else {
+                    ExploreAlbumButton(
+                        viewModel = viewModel,
+                        currentIntervalIndex = currentIntervalIndex
+                    )
+                }
             }
+
 
             Spacer(modifier = Modifier.size(8.dp))
             Box(Modifier.border(BorderStroke(1.dp, Color.Black))) {
@@ -171,7 +179,6 @@ fun TrackCard(
     }
 
     val screwed = remember { mutableStateOf(false) }
-
 
     Card(
         shape = RoundedCornerShape(0), modifier = Modifier
@@ -396,60 +403,64 @@ fun ExploreAlbumButton(
             null
         }
 
-    if (!viewModel.isExploreSessionStarted) {
-        Button(
-            elevation = ButtonDefaults.elevatedButtonElevation(),
-            border = BorderStroke(1.dp, Color.Black),
-            onClick = onClick
-        ) {
-            Text("Start Exploring")
-        }
-    } else {
-        Button(
-            elevation = ButtonDefaults.elevatedButtonElevation(),
-            border = BorderStroke(1.dp, Color.Black),
-            onClick = onClick
-        ) {
-            Text("Stop Exploring")
-        }
+    Column(verticalArrangement = Arrangement.Center,
+    horizontalAlignment = Alignment.CenterHorizontally) {
+        if (!viewModel.isExploreSessionStarted) {
+            Button(
+                elevation = ButtonDefaults.elevatedButtonElevation(),
+                border = BorderStroke(1.dp, Color.Black),
+                onClick = onClick
+            ) {
+                Text("Start Exploring")
+            }
+        } else {
 
-        Spacer(modifier = Modifier.size(8.dp))
+            Button(
+                elevation = ButtonDefaults.elevatedButtonElevation(),
+                border = BorderStroke(1.dp, Color.Black),
+                onClick = onClick
+            ) {
+                Text("Stop Exploring")
+            }
 
-        // Give it a little crossfade so it doesn't abruptly enter/leave.
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            var i = trackStartIndices.value[currentTrack?.track?.id]
-            val amountOfIntervals = currentAlbumTracks.size
-            if (i != null) {
-                // Iterate until the next 3 tracks pretty much.
-                while (i < amountOfIntervals && currentAlbumTracks[i].first == currentTrack) {
-                    val interval = currentAlbumTracks[i].second
+            Spacer(modifier = Modifier.size(8.dp))
 
-                    // For each interval we've got for the song (3 for > 45 seconds), create a duration card for it.
-                    val duration = "${interval.first} - ${interval.second}"
+            // Give it a little crossfade so it doesn't abruptly enter/leave.
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                var i = trackStartIndices.value[currentTrack?.track?.id]
+                val amountOfIntervals = currentAlbumTracks.size
+                if (i != null) {
+                    // Iterate until the next 3 tracks pretty much.
+                    while (i < amountOfIntervals && currentAlbumTracks[i].first == currentTrack) {
+                        val interval = currentAlbumTracks[i].second
 
-                    Crossfade(
-                        targetState = (i == currentIntervalIndex.value),
-                        label = "Transition Active Interval"
-                    ) { isSelected ->
-                        val containerColor =
-                            if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface
+                        // For each interval we've got for the song (3 for > 45 seconds), create a duration card for it.
+                        val duration = "${interval.first} - ${interval.second}"
 
-                        Card(
-                            border = BorderStroke(1.dp, Color.Black),
-                            colors = CardDefaults.cardColors(
-                                containerColor = containerColor
-                            ),
-                            shape = RoundedCornerShape(0),
-                        ) {
-                            Text(
-                                duration,
-                                modifier = Modifier.padding(4.dp),
-                                fontWeight = FontWeight(400)
-                            )
+                        Crossfade(
+                            targetState = (i == currentIntervalIndex.value),
+                            label = "Transition Active Interval"
+                        ) { isSelected ->
+                            val containerColor =
+                                if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface
+
+                            Card(
+                                border = BorderStroke(1.dp, Color.Black),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = containerColor
+                                ),
+                                shape = RoundedCornerShape(0),
+                            ) {
+                                Text(
+                                    duration,
+                                    modifier = Modifier.padding(4.dp),
+                                    fontWeight = FontWeight(400)
+                                )
+                            }
                         }
-                    }
 
-                    i++
+                        i++
+                    }
                 }
             }
         }
