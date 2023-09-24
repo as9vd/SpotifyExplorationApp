@@ -1,12 +1,12 @@
 package com.asadshamsiev.spotifyexplorationapplication
 
-import androidx.compose.animation.core.FastOutSlowInEasing
+import android.view.MotionEvent
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -31,10 +31,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.pointer.pointerInteropFilter
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
@@ -160,6 +163,7 @@ fun AlbumCardResults(
 }
 
 // TODO: Give AlbumCard a cool animation when clicked.
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun AlbumCard(
     artistName: String,
@@ -168,17 +172,25 @@ fun AlbumCard(
     link: String, // These'll eventually need defaults for if it craps out.
     modifier: Modifier = Modifier
 ) {
+    val selected = remember { mutableStateOf(false) }
+    val scale = animateFloatAsState(if (selected.value) 1.0875f else 1f, label = "Get Big")
+
     Card(
         border = BorderStroke(1.dp, Color.Black),
         modifier = modifier
             .fillMaxWidth()
             .padding(0.dp)
-            .pointerInput(Unit) {
-                detectTapGestures(
-                    onPress = {
-                        onClick()
-                    }
-                )
+            .scale(scale.value)
+            .pointerInteropFilter {
+                onClick()
+                when (it.action) {
+                    MotionEvent.ACTION_DOWN -> {
+                        selected.value = true }
+
+                    MotionEvent.ACTION_UP  -> {
+                        selected.value = false }
+                }
+                true
             },
         shape = RoundedCornerShape(0),
     ) {
