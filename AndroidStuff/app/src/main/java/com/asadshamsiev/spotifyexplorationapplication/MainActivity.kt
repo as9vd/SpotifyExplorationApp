@@ -43,6 +43,8 @@ import com.adamratzman.spotify.endpoints.pub.SearchApi
 import com.adamratzman.spotify.models.SimpleTrack
 import com.adamratzman.spotify.models.SpotifySearchResult
 import com.adamratzman.spotify.spotifyAppApi
+import com.asadshamsiev.spotifyexplorationapplication.supersecret.clientId
+import com.asadshamsiev.spotifyexplorationapplication.supersecret.clientSecret
 import com.asadshamsiev.spotifyexplorationapplication.ui.theme.AppTheme
 import com.asadshamsiev.spotifyexplorationapplication.utils.SimpleTrackWrapper
 import com.asadshamsiev.spotifyexplorationapplication.utils.SpotifyState
@@ -68,8 +70,6 @@ import kotlinx.coroutines.withTimeoutOrNull
 import okhttp3.internal.immutableListOf
 
 const val UNINIT_STR = ""
-const val clientId = "d6d33d89d3a044618291f268d1eea409"
-const val clientSecret = "58f5caf8a73b439689b108824daf4c79"
 const val redirectUri = "com.asadshamsiev.spotifyexplorationapplication://callback"
 
 class MainActivity : ComponentActivity() {

@@ -32,7 +32,7 @@ class TrackUtils {
          * where each pair represents the start and end time of the segment in a readable format.
          */
         fun sampleSong(totalLengthMillis: Int): ArrayList<Pair<String, String>> {
-             if (totalLengthMillis <= 50000) { // If it's less than 50 seconds, just listen to half.
+             if (totalLengthMillis <= 50000) { // If it's less than 50 seconds, just listen to half of it mate.
                  val returnVal = ArrayList<Pair<String, String>>()
                  returnVal.add(Pair(msToDuration(0), msToDuration(totalLengthMillis / 2)))
                  return returnVal
