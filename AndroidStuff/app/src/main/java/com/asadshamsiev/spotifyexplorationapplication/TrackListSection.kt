@@ -8,6 +8,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.border
@@ -47,7 +48,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.adamratzman.spotify.models.SimpleTrack
@@ -292,7 +292,12 @@ fun ExploreAlbumButton(
         verticalArrangement = Arrangement.Top,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        if (isLoading) {
+        AnimatedVisibility(
+            visible = isLoading,
+            enter = fadeIn(animationSpec = tween(250))
+        ) {
+            // This is here so there's a smoother transition between the loading text and
+            // the explore buttons.
             Button(
                 enabled = false,
                 colors = ButtonDefaults.buttonColors(
@@ -308,7 +313,12 @@ fun ExploreAlbumButton(
                     color = Color.Black
                 )
             }
-        } else {
+        }
+
+        AnimatedVisibility(
+            visible = !isLoading,
+            enter = fadeIn(animationSpec = tween(250))
+        ) {
             if (!viewModel.isExploreSessionStarted) {
                 Button(
                     elevation = ButtonDefaults.elevatedButtonElevation(),

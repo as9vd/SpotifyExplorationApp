@@ -248,7 +248,7 @@ class MainActivity : ComponentActivity() {
                             updatedAlbumTracks.addAll(batchTracks)
                             mainScreenViewModel.setCurrentAlbumTracks(updatedAlbumTracks)
                             batchTracks.clear()
-                            delay(500L)
+                            delay(350L)
 
                             // This is to force recomposition of MainScreen.
                             batchIndex.value += 1
