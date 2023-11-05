@@ -12,6 +12,7 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -46,7 +47,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.adamratzman.spotify.models.SimpleTrack
 import com.asadshamsiev.spotifyexplorationapplication.utils.SimpleTrackWrapper
 import com.asadshamsiev.spotifyexplorationapplication.utils.TrackUtils
@@ -80,17 +83,11 @@ fun TrackListSection(
                 verticalArrangement = Arrangement.Top,
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Crossfade(
-                    targetState = isLoadingTracks, animationSpec = tween(750),
-                    label = "Show Explore Album"
-                ) { isLoading ->
-                    if (!isLoading) {
-                        ExploreAlbumButton(
-                            viewModel = viewModel,
-                            currentIntervalIndex = currentIntervalIndex
-                        )
-                    }
-                }
+                ExploreAlbumButton(
+                    viewModel = viewModel,
+                    currentIntervalIndex = currentIntervalIndex,
+                    isLoading = isLoadingTracks
+                )
             }
 
             Spacer(modifier = Modifier.size(8.dp))
@@ -236,7 +233,8 @@ fun TrackCard(
 @Composable
 fun ExploreAlbumButton(
     viewModel: MainScreenViewModel,
-    currentIntervalIndex: MutableState<Int>
+    currentIntervalIndex: MutableState<Int>,
+    isLoading: Boolean
 ) {
     val handler = rememberUpdatedState(Handler(Looper.getMainLooper()))
     val buttonClicked = remember { mutableStateOf(false) }
@@ -294,32 +292,58 @@ fun ExploreAlbumButton(
         verticalArrangement = Arrangement.Top,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        if (!viewModel.isExploreSessionStarted) {
+        if (isLoading) {
             Button(
-                elevation = ButtonDefaults.elevatedButtonElevation(),
-                border = BorderStroke(1.dp, Color.Black),
-                onClick = onClick
+                enabled = false,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color.Transparent,
+                    disabledContainerColor = Color.Transparent,
+                    contentColor = Color.Black
+                ), onClick = {}
             ) {
-                Text("Start Exploring")
+                Text(
+                    "Loading.. 🤺",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Normal,
+                    color = Color.Black
+                )
             }
-
         } else {
-            Column(
-                verticalArrangement = Arrangement.Top,
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
+            if (!viewModel.isExploreSessionStarted) {
                 Button(
                     elevation = ButtonDefaults.elevatedButtonElevation(),
                     border = BorderStroke(1.dp, Color.Black),
-                    onClick = onClick
+                    onClick = onClick,
+                    modifier = Modifier.clickable(
+                        indication = null,
+                        interactionSource = remember { MutableInteractionSource() }) {}
                 ) {
-                    Text("Stop Exploring")
+                    Text("Start Exploring")
                 }
 
-                Spacer(modifier = Modifier.size(8.dp))
+            } else {
+                Column(
+                    verticalArrangement = Arrangement.Top,
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Button(
+                        elevation = ButtonDefaults.elevatedButtonElevation(),
+                        border = BorderStroke(1.dp, Color.Black),
+                        onClick = onClick
+                    ) {
+                        Text("Stop Exploring")
+                    }
 
-                // This is the durations you see when an exploration session is started.
-                DurationCards(trackStartIndices, currentAlbumTracks, currentIntervalIndex, currentTrack)
+                    Spacer(modifier = Modifier.size(8.dp))
+
+                    // This is the durations you see when an exploration session is started.
+                    DurationCards(
+                        trackStartIndices,
+                        currentAlbumTracks,
+                        currentIntervalIndex,
+                        currentTrack
+                    )
+                }
             }
         }
     }
