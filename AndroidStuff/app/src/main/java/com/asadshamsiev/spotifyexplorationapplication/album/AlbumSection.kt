@@ -1,4 +1,4 @@
-package com.asadshamsiev.spotifyexplorationapplication
+package com.asadshamsiev.spotifyexplorationapplication.album
 
 import android.view.MotionEvent
 import androidx.compose.animation.core.Spring
@@ -6,7 +6,6 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -57,7 +56,10 @@ fun AlbumSection(
 ) {
     val textFieldEmpty = remember { derivedStateOf { textFieldQuery.value.isEmpty() } }
 
+    // The query area.
     SearchBox(viewModel = viewModel, textFieldQuery = textFieldQuery)
+
+    // The results of the query.
     AlbumCardResults(
         textFieldEmpty = textFieldEmpty.value,
         isLoading = isLoading,

@@ -1,19 +1,15 @@
-package com.asadshamsiev.spotifyexplorationapplication
+package com.asadshamsiev.spotifyexplorationapplication.tracklist
 
 import android.annotation.SuppressLint
-import android.os.Handler
-import android.os.Looper
 import android.util.Log
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -26,22 +22,17 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Divider
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.State
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -49,12 +40,15 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import com.adamratzman.spotify.models.SimpleTrack
+import com.asadshamsiev.spotifyexplorationapplication.tracklist.buttons.ButtonSection
+import com.asadshamsiev.spotifyexplorationapplication.tracklist.buttons.ExploreAlbumButton
 import com.asadshamsiev.spotifyexplorationapplication.utils.SimpleTrackWrapper
 import com.asadshamsiev.spotifyexplorationapplication.utils.TrackUtils
 import com.asadshamsiev.spotifyexplorationapplication.viewmodels.MainScreenViewModel
-import com.spotify.android.appremote.api.SpotifyAppRemote
+
+
+
+
 
 @SuppressLint("MutableCollectionMutableState")
 @Composable
@@ -70,6 +64,10 @@ fun TrackListSection(
     // updates. I'll need a better way to do that in the future.
     val batchIndexFiller = batchIndex
 
+    /* 2 SUBSECTIONS WITHIN THE TRACKLISTSECTION:
+       1. The Buttons,
+       2. The actual track Cards.
+    */
     if (tracksInit == true) {
         Column(
             modifier = Modifier.fillMaxSize(),
@@ -79,26 +77,20 @@ fun TrackListSection(
             // This button is the thing that actually starts the sampling.
             val currentIntervalIndex = viewModel.currentIntervalIndex
 
-            Column(
-                verticalArrangement = Arrangement.Top,
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                Row {
-                    ExploreAlbumButton(
-                        viewModel = viewModel,
-                        currentIntervalIndex = currentIntervalIndex,
-                        isLoading = isLoadingTracks
-                    )
-
-                }
-
-            }
+            ButtonSection(
+                viewModel = viewModel,
+                currentIntervalIndex = currentIntervalIndex,
+                isLoadingTracks = isLoadingTracks
+            )
 
             Spacer(modifier = Modifier.size(8.dp))
+
             TrackList(uniqueTracks = uniqueTracks, viewModel = viewModel)
+
             Spacer(modifier = Modifier.size(8.dp))
         }
     } else {
+        // TODO:
         // I'll need something here for when it's a A) podcast
         // or B) when the thing is just not going to load (e.g. past 10 seconds, just give up).
         CircularProgressIndicator()
@@ -227,55 +219,6 @@ fun TrackCard(
                             .weight(0.85f)
                     )
                 }
-            }
-        }
-    }
-}
-
-
-
-@Composable
-fun DurationCards(
-    trackStartIndices: State<Map<String, Int>>,
-    currentAlbumTracks: List<Pair<SimpleTrackWrapper, Pair<String, String>>>,
-    currentIntervalIndex: MutableState<Int>,
-    currentTrack: SimpleTrackWrapper?
-) {
-    // Give it a little crossfade so it doesn't abruptly enter/leave.
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        var i = trackStartIndices.value[currentTrack?.track?.id]
-        val amountOfIntervals = currentAlbumTracks.size
-        if (i != null) {
-            // Iterate until the next 3 tracks pretty much.
-            while (i < amountOfIntervals && currentAlbumTracks[i].first == currentTrack) {
-                val interval = currentAlbumTracks[i].second
-
-                // For each interval we've got for the song (3 for > 45 seconds), create a duration card for it.
-                val duration = "${interval.first} - ${interval.second}"
-
-                Crossfade(
-                    targetState = (i == currentIntervalIndex.value),
-                    label = "Transition Active Interval"
-                ) { isSelected ->
-                    val containerColor =
-                        if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.onSurface
-
-                    Card(
-                        border = BorderStroke(1.dp, Color.Black),
-                        colors = CardDefaults.cardColors(
-                            containerColor = containerColor
-                        ),
-                        shape = RoundedCornerShape(0),
-                    ) {
-                        Text(
-                            duration,
-                            modifier = Modifier.padding(4.dp),
-                            fontWeight = FontWeight(400)
-                        )
-                    }
-                }
-
-                i++
             }
         }
     }

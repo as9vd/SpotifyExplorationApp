@@ -17,6 +17,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.asadshamsiev.spotifyexplorationapplication.album.AlbumSection
+import com.asadshamsiev.spotifyexplorationapplication.tracklist.TrackListSection
 import com.asadshamsiev.spotifyexplorationapplication.viewmodels.MainScreenViewModel
 import kotlinx.coroutines.delay
 
@@ -77,7 +79,7 @@ fun MainScreen(
     val spotifyApiDead = viewModel.isSpotifyApiDead
     val localSpotifyDead: Boolean = viewModel.isLocalSpotifyDead
 
-    Crossfade(targetState = spotifyApiDead || localSpotifyDead, label = "Error(s) Transition") { state ->
+    Crossfade(targetState = spotifyApiDead || localSpotifyDead, label = "Error(s) Transition") { dead ->
         Column(
             modifier = Modifier
                 .padding(start = 16.dp, end = 16.dp)
@@ -91,13 +93,17 @@ fun MainScreen(
             // These errors only show when the
             // 1. local phone API is dead or
             // 2. the public API is dead.
-            if (state) {
+            if (dead) {
                 SearchConditionalErrors(
                     spotifyApiDead = spotifyApiDead,
                     localSpotifyDead = localSpotifyDead
                 )
             } else {
                 if (!spotifyApiDead && !localSpotifyDead) {
+                    // 2 SECTIONS:
+                    // 1. The AlbumSection, where you can search for stuff,
+                    // 2. The TrackList section, where the tracks of current album are shown,
+                    // and you can click buttons.
                     AlbumSection(
                         foundStuff = foundStuff,
                         isLoading = isLoading,
