@@ -34,9 +34,8 @@ import com.adamratzman.spotify.models.SimpleTrack
 import com.asadshamsiev.spotifyexplorationapplication.utils.*
 import com.asadshamsiev.spotifyexplorationapplication.viewmodels.MainScreenViewModel
 
-
-// TODO: Need to deal with A) songs that can't play. Like that Tory Lanez album with The Colour Violet.
-// TODO: Also, B) podcasts.
+// Potential issues here with songs that can't play. Like that Tory Lanez album with
+// The Colour Violet. Also, podcasts.
 @Composable
 fun ExploreAlbumButton(
     viewModel: MainScreenViewModel,
@@ -99,37 +98,13 @@ fun ExploreAlbumButton(
         verticalArrangement = Arrangement.Top,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        AnimatedVisibility(
-            visible = isLoading,
-            enter = fadeIn(animationSpec = tween(250))
-        ) {
-            // This is here so there's a smoother transition between the loading text and
-            // the explore buttons.
-            Button(
-                enabled = false,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.Transparent,
-                    disabledContainerColor = Color.Transparent,
-                    contentColor = Color.Black
-                ), onClick = {}
-            ) {
-                Text(
-                    "Loading.. 🤺",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Normal,
-                    color = Color.Black
-                )
-            }
+        AnimatedVisibility(visible = isLoading, enter = fadeIn(animationSpec = tween(250))) {
+            LoadingText()
         }
 
-        AnimatedVisibility(
-            visible = !isLoading,
-            enter = fadeIn(animationSpec = tween(250))
-        ) {
+        AnimatedVisibility(visible = !isLoading, enter = fadeIn(animationSpec = tween(250))) {
             if (!viewModel.isExploreSessionStarted) {
-                LoadingExploreSession(
-                    onClick = onClick
-                )
+                UnstartedExploreSession(onClick = onClick)
             } else {
                 StartedExploreSession(
                     onClick = onClick,
@@ -143,9 +118,9 @@ fun ExploreAlbumButton(
     }
 }
 
-// This is the Composable that shows when the Explore button isn't even present yet.
+// This is the Composable that shows when the Explore button hasn't been pressed.
 @Composable
-fun LoadingExploreSession(onClick: () -> Unit) {
+fun UnstartedExploreSession(onClick: () -> Unit) {
     Button(
         elevation = ButtonDefaults.elevatedButtonElevation(),
         border = BorderStroke(1.dp, Color.Black),
@@ -184,6 +159,28 @@ fun StartedExploreSession(
             currentAlbumTracks,
             currentIntervalIndex,
             currentTrack
+        )
+    }
+}
+
+// When the tracks are being laid out, this is what shows.
+@Composable
+fun LoadingText() {
+    // This is here so there's a smoother transition between the loading text and
+    // the explore buttons.
+    Button(
+        enabled = false,
+        colors = ButtonDefaults.buttonColors(
+            containerColor = Color.Transparent,
+            disabledContainerColor = Color.Transparent,
+            contentColor = Color.Black
+        ), onClick = {}
+    ) {
+        Text(
+            "Loading.. 🤺",
+            fontSize = 18.sp,
+            fontWeight = FontWeight.Normal,
+            color = Color.Black
         )
     }
 }

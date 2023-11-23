@@ -147,7 +147,9 @@ fun getProgressRunnable(
     }
 }
 
-fun findFirstIndicesOfTracks(currentAlbumTracks: List<Pair<SimpleTrackWrapper, Pair<String, String>>>): Map<String, Int> {
+fun findFirstIndicesOfTracks(
+    currentAlbumTracks: List<Pair<SimpleTrackWrapper, Pair<String, String>>>
+): Map<String, Int> {
     val seenTracks = mutableSetOf<String>()
     val firstIndices = mutableMapOf<String, Int>()
 

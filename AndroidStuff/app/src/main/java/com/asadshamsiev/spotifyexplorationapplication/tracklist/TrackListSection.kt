@@ -21,14 +21,12 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Divider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
@@ -41,14 +39,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.asadshamsiev.spotifyexplorationapplication.tracklist.buttons.ButtonSection
-import com.asadshamsiev.spotifyexplorationapplication.tracklist.buttons.ExploreAlbumButton
 import com.asadshamsiev.spotifyexplorationapplication.utils.SimpleTrackWrapper
 import com.asadshamsiev.spotifyexplorationapplication.utils.TrackUtils
 import com.asadshamsiev.spotifyexplorationapplication.viewmodels.MainScreenViewModel
-
-
-
-
 
 @SuppressLint("MutableCollectionMutableState")
 @Composable
@@ -141,7 +134,6 @@ fun TrackList(uniqueTracks: List<SimpleTrackWrapper>, viewModel: MainScreenViewM
     }
 }
 
-// TODO: Give the transition a cooler animation.
 @Composable
 fun TrackCard(
     track: SimpleTrackWrapper,

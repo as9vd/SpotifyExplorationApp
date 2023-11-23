@@ -63,11 +63,18 @@ class MainScreenViewModel : ViewModel() {
         }
     private val _failedToGetTracks = mutableStateOf(false)
 
-    // If "Explore Button" clicked.
+    // If ExploreAlbumButton clicked.
     private var _isExploreSessionStarted by mutableStateOf(false)
     val isExploreSessionStarted: Boolean get() = _isExploreSessionStarted
     fun setIsExploreSessionStarted(newConditional: Boolean) {
         _isExploreSessionStarted = newConditional
+    }
+
+    // If "Explore Button" clicked.
+    private var _isSpeedSessionStarted by mutableStateOf(false)
+    val isSpeedSessionStarted: Boolean get() = _isSpeedSessionStarted
+    fun setIsSpeedSessionStarted(newConditional: Boolean) {
+        _isSpeedSessionStarted = newConditional
     }
 
     var trackUri: String
