@@ -7,7 +7,7 @@ import androidx.compose.runtime.State
 import com.asadshamsiev.spotifyexplorationapplication.viewmodels.MainScreenViewModel
 import com.spotify.android.appremote.api.SpotifyAppRemote
 
-fun getButtonOnClickFunction(
+fun getExploreButtonOnClickFunction(
     spotifyAppRemote: SpotifyAppRemote?,
     currentAlbumTracks: List<Pair<SimpleTrackWrapper, Pair<String, String>>>,
     viewModel: MainScreenViewModel,
@@ -62,7 +62,7 @@ fun getButtonOnClickFunction(
     }
 }
 
-fun getProgressRunnable(
+fun getExploreProgressRunnable(
     spotifyAppRemote: SpotifyAppRemote?,
     currentAlbumTracks: List<Pair<SimpleTrackWrapper, Pair<String, String>>>,
     currentIntervalIndex: MutableState<Int>,

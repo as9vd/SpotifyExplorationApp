@@ -40,18 +40,16 @@ import com.asadshamsiev.spotifyexplorationapplication.viewmodels.MainScreenViewM
 fun ExploreAlbumButton(
     viewModel: MainScreenViewModel,
     currentIntervalIndex: MutableState<Int>,
-    isLoading: Boolean
+    isLoading: Boolean,
+    currentAlbumTracks: List<Pair<SimpleTrackWrapper, Pair<String, String>>>,
+    trackStartIndices: State<Map<String, Int>>
 ) {
     val handler = rememberUpdatedState(Handler(Looper.getMainLooper()))
     val buttonClicked = remember { mutableStateOf(false) }
 
-    val currentAlbumTracks = remember { viewModel.currentAlbumTracks }
-    val trackStartIndices =
-        remember { derivedStateOf { findFirstIndicesOfTracks(currentAlbumTracks) } }
-
     val spotifyAppRemote = viewModel.spotifyAppRemote
 
-    val checkProgressRunnable = getProgressRunnable(
+    val checkProgressRunnable = getExploreProgressRunnable(
         spotifyAppRemote = spotifyAppRemote,
         currentAlbumTracks = currentAlbumTracks,
         currentIntervalIndex = currentIntervalIndex,
@@ -59,7 +57,7 @@ fun ExploreAlbumButton(
         handler = handler
     )
 
-    val onClick = getButtonOnClickFunction(
+    val onClick = getExploreButtonOnClickFunction(
         spotifyAppRemote = spotifyAppRemote,
         currentAlbumTracks = currentAlbumTracks,
         viewModel = viewModel,
@@ -98,11 +96,11 @@ fun ExploreAlbumButton(
         verticalArrangement = Arrangement.Top,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        AnimatedVisibility(visible = isLoading, enter = fadeIn(animationSpec = tween(250))) {
-            LoadingText()
-        }
+//        AnimatedVisibility(visible = isLoading, enter = fadeIn(animationSpec = tween(250))) {
+//            LoadingText()
+//        }
 
-        AnimatedVisibility(visible = !isLoading, enter = fadeIn(animationSpec = tween(250))) {
+//        AnimatedVisibility(visible = !isLoading, enter = fadeIn(animationSpec = tween(250))) {
             if (!viewModel.isExploreSessionStarted) {
                 UnstartedExploreSession(onClick = onClick)
             } else {
@@ -114,7 +112,7 @@ fun ExploreAlbumButton(
                     currentTrack = currentTrack
                 )
             }
-        }
+//        }
     }
 }
 
@@ -163,24 +161,3 @@ fun StartedExploreSession(
     }
 }
 
-// When the tracks are being laid out, this is what shows.
-@Composable
-fun LoadingText() {
-    // This is here so there's a smoother transition between the loading text and
-    // the explore buttons.
-    Button(
-        enabled = false,
-        colors = ButtonDefaults.buttonColors(
-            containerColor = Color.Transparent,
-            disabledContainerColor = Color.Transparent,
-            contentColor = Color.Black
-        ), onClick = {}
-    ) {
-        Text(
-            "Loading.. 🤺",
-            fontSize = 18.sp,
-            fontWeight = FontWeight.Normal,
-            color = Color.Black
-        )
-    }
-}
