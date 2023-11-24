@@ -167,7 +167,7 @@ fun findFirstIndicesOfTracks(
 
 fun getSpeedButtonOnClickFunction(
     spotifyAppRemote: SpotifyAppRemote?,
-    currentAlbumTracks: List<Pair<SimpleTrackWrapper, Pair<String, String>>>,
+    currentSpeedAlbumTracks: List<Pair<SimpleTrackWrapper, Pair<String, String>>>,
     viewModel: MainScreenViewModel,
     handler: State<Handler>,
     buttonClicked: MutableState<Boolean>,
@@ -181,12 +181,12 @@ fun getSpeedButtonOnClickFunction(
             viewModel.currentIntervalIndex.value = 0
 
             // Get the first track and its uri, because we'll play it.
-            val firstTrack = currentAlbumTracks[0].first
+            val firstTrack = currentSpeedAlbumTracks[0].first
             val firstTrackUri = firstTrack.track.uri.uri
 
             spotifyAppRemote!!.playerApi.play(firstTrackUri)
                 ?.apply {
-                    val initialInterval = currentAlbumTracks[currentIntervalIndex.value].second
+                    val initialInterval = currentSpeedAlbumTracks[currentIntervalIndex.value].second
                     val startOfFirstInterval = TrackUtils.durationToMs(initialInterval.first)
 
                     handler.value.postDelayed({
@@ -222,7 +222,7 @@ fun getSpeedButtonOnClickFunction(
 
 fun getSpeedProgressRunnable(
     spotifyAppRemote: SpotifyAppRemote?,
-    currentAlbumTracks: List<Pair<SimpleTrackWrapper, Pair<String, String>>>,
+    currentSpeedAlbumTracks: List<Pair<SimpleTrackWrapper, Pair<String, String>>>,
     currentIntervalIndex: MutableState<Int>,
     viewModel: MainScreenViewModel,
     handler: State<Handler>
@@ -236,7 +236,7 @@ fun getSpeedProgressRunnable(
 
                         // This is the paired interval (e.g. <"1:28", "2:56">).
                         val currentInterval =
-                            currentAlbumTracks[currentIntervalIndex.value].second
+                            currentSpeedAlbumTracks[currentIntervalIndex.value].second
 
                         val endOfCurrentInterval: Long =
                             TrackUtils.durationToMs(currentInterval.second)
@@ -246,15 +246,15 @@ fun getSpeedProgressRunnable(
                             viewModel.currentIntervalIndex.value = currentIntervalIndex.value + 1
 
                             // If there's another interval to be played, then play it.
-                            val amountOfIntervals: Int = currentAlbumTracks.size
+                            val amountOfIntervals: Int = currentSpeedAlbumTracks.size
                             val isAtEnd: Boolean = currentIntervalIndex.value >= amountOfIntervals
                             if (!isAtEnd) {
                                 val trackToBePlayed =
-                                    currentAlbumTracks[currentIntervalIndex.value].first
+                                    currentSpeedAlbumTracks[currentIntervalIndex.value].first
                                 val previousTrackPlayed =
-                                    currentAlbumTracks[currentIntervalIndex.value - 1].first
+                                    currentSpeedAlbumTracks[currentIntervalIndex.value - 1].first
                                 val nextInterval =
-                                    currentAlbumTracks[currentIntervalIndex.value].second
+                                    currentSpeedAlbumTracks[currentIntervalIndex.value].second
                                 val startOfNextInterval: Long =
                                     TrackUtils.durationToMs(nextInterval.first)
 
