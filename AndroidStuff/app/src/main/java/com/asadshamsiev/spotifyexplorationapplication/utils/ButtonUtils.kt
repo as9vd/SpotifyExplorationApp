@@ -232,7 +232,8 @@ fun getSpeedProgressRunnable(
             if (spotifyAppRemote != null && spotifyAppRemote.isConnected) {
                 try {
                     spotifyAppRemote.playerApi.playerState?.setResultCallback { state ->
-                        val currentPosition = state.playbackPosition
+                        // TODO: This is not the valid currentPosition when we crack on.
+                        var currentPosition = state.playbackPosition
 
                         // This is the paired interval (e.g. <"1:28", "2:56">).
                         val currentInterval =
@@ -270,6 +271,8 @@ fun getSpeedProgressRunnable(
                                                 "Couldn't seek to the start of the next for the new song."
                                             )
                                         }
+
+                                    currentPosition = 0;
                                 }
                             } else {
                                 // If you're at the end (e.g. there are no more tracks), just
