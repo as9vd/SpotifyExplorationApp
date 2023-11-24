@@ -164,7 +164,6 @@ fun AlbumCardResults(
     }
 }
 
-// TODO: Give AlbumCard a cool animation when clicked.
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun AlbumCard(

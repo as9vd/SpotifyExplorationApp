@@ -31,17 +31,15 @@ class TrackUtils {
          * @return A list of sampled segments as pairs (ArrayList<Pair<String, String>>),
          * where each pair represents the start and end time of the segment in a readable format.
          */
-        fun sampleSong(totalLengthMillis: Int): ArrayList<Pair<String, String>> {
+        fun sampleSong(totalLengthMillis: Int, numPeriod: Int, percentageToSample: Double): ArrayList<Pair<String, String>> {
              if (totalLengthMillis <= 50000) { // If it's less than 50 seconds, just listen to half of it mate.
                  val returnVal = ArrayList<Pair<String, String>>()
                  returnVal.add(Pair(msToDuration(0), msToDuration(totalLengthMillis / 2)))
                  return returnVal
              }
 
-            val numPeriod = 3
-
             val targetLength =
-                ((totalLengthMillis - 5000) * 0.53).toInt() // A little offset so doesn't go to end.
+                ((totalLengthMillis - 5000) * percentageToSample).toInt() // A little offset so doesn't go to end.
             val segmentLength = targetLength / numPeriod
             val thirdOfSong = totalLengthMillis / numPeriod
 

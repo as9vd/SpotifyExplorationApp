@@ -1,7 +1,5 @@
 package com.asadshamsiev.spotifyexplorationapplication.tracklist.buttons
 
-import android.os.Handler
-import android.os.Looper
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -56,7 +54,6 @@ fun ButtonRow(
     AnimatedVisibility(visible = isLoadingTracks, enter = fadeIn(animationSpec = tween(250))) {
         LoadingText()
     }
-
     AnimatedVisibility(visible = !isLoadingTracks, enter = fadeIn(animationSpec = tween(250))) {
         Row(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -76,7 +73,9 @@ fun ButtonRow(
     }
 }
 
-// TODO: Speed mode button.
+/* TODO: Speed mode button.
+    This is going to be a bit more difficult, because SampleSong gets called in
+    MainActivity's handleAlbumChange. I'll probably need 2 separate variables. */
 @Composable
 fun SpeedRunAlbumButton(
     currentAlbumTracks: List<Pair<SimpleTrackWrapper, Pair<String, String>>>

@@ -225,7 +225,7 @@ class MainActivity : ComponentActivity() {
                     for (track in album!!.tracks) {
                         val trackLength: Int = track.length
 
-                        // TODO: Check if it's playable in bloody America. "US" in availableMarkets is too slow.
+                        // Check if it's playable in bloody America. "US" in availableMarkets is too slow.
                         val isPlayable = track.availableMarkets.size > 0
                         val isOfNotableLength = trackLength > 20000
 
@@ -234,12 +234,25 @@ class MainActivity : ComponentActivity() {
                             continue
                         }
 
-                        val segments: ArrayList<Pair<String, String>> =
-                            TrackUtils.sampleSong(trackLength)
+                        val exploreSegments: ArrayList<Pair<String, String>> =
+                            TrackUtils.sampleSong(
+                                trackLength,
+                                numPeriod = 3,
+                                percentageToSample = 0.53
+                            )
+
+                        // TODO: Make this work with the new button. It'll take time.
+                        val speedSegments: ArrayList<Pair<String, String>> =
+                            TrackUtils.sampleSong(
+                                trackLength,
+                                numPeriod = 2,
+                                percentageToSample = 0.33
+                            )
+
 
                         // We'll add the 3 segments (1 if short) to batchTracks, and partner
                         // it with the track associated with the segment(s).
-                        for (segment in segments) {
+                        for (segment in exploreSegments) {
                             batchTracks.add(Pair(SimpleTrackWrapper(track), segment))
                         }
 
@@ -313,6 +326,6 @@ class MainActivity : ComponentActivity() {
             SpotifyAppRemote.disconnect(spotifyAppRemote.value)
         }
 
-        // TODO: Maybe the same for the public Spotify API?
+        // Maybe the same for the public Spotify API?
     }
 }

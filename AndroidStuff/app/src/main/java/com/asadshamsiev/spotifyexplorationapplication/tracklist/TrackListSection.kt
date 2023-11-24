@@ -83,9 +83,7 @@ fun TrackListSection(
             Spacer(modifier = Modifier.size(8.dp))
         }
     } else {
-        // TODO:
-        // I'll need something here for when it's a A) podcast
-        // or B) when the thing is just not going to load (e.g. past 10 seconds, just give up).
+        // TODO: When the thing is just not going to load (e.g. past 10 seconds), just give up.
         CircularProgressIndicator()
         Text(
             "Data is loading. If this goes on for a while, there's a good chance your internet signal is weak, mate.",

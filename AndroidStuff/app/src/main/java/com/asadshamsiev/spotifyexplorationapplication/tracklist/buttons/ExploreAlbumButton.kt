@@ -3,9 +3,6 @@ package com.asadshamsiev.spotifyexplorationapplication.tracklist.buttons
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -20,16 +17,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.State
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.adamratzman.spotify.models.SimpleTrack
 import com.asadshamsiev.spotifyexplorationapplication.utils.*
 import com.asadshamsiev.spotifyexplorationapplication.viewmodels.MainScreenViewModel
@@ -96,23 +90,17 @@ fun ExploreAlbumButton(
         verticalArrangement = Arrangement.Top,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-//        AnimatedVisibility(visible = isLoading, enter = fadeIn(animationSpec = tween(250))) {
-//            LoadingText()
-//        }
-
-//        AnimatedVisibility(visible = !isLoading, enter = fadeIn(animationSpec = tween(250))) {
-            if (!viewModel.isExploreSessionStarted) {
-                UnstartedExploreSession(onClick = onClick)
-            } else {
-                StartedExploreSession(
-                    onClick = onClick,
-                    trackStartIndices = trackStartIndices,
-                    currentAlbumTracks = currentAlbumTracks,
-                    currentIntervalIndex = currentIntervalIndex,
-                    currentTrack = currentTrack
-                )
-            }
-//        }
+        if (!viewModel.isExploreSessionStarted) {
+            UnstartedExploreSession(onClick = onClick)
+        } else {
+            StartedExploreSession(
+                onClick = onClick,
+                trackStartIndices = trackStartIndices,
+                currentAlbumTracks = currentAlbumTracks,
+                currentIntervalIndex = currentIntervalIndex,
+                currentTrack = currentTrack
+            )
+        }
     }
 }
 
@@ -140,7 +128,10 @@ fun StartedExploreSession(
     currentIntervalIndex: MutableState<Int>,
     currentTrack: SimpleTrackWrapper?
 ) {
-    Column(verticalArrangement = Arrangement.Top, horizontalAlignment = Alignment.CenterHorizontally) {
+    Column(
+        verticalArrangement = Arrangement.Top,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
         Button(
             elevation = ButtonDefaults.elevatedButtonElevation(),
             border = BorderStroke(1.dp, Color.Black),
