@@ -70,13 +70,6 @@ class MainScreenViewModel : ViewModel() {
         _isExploreSessionStarted = newConditional
     }
 
-    // If "Explore Button" clicked.
-    private var _isSpeedSessionStarted by mutableStateOf(false)
-    val isSpeedSessionStarted: Boolean get() = _isSpeedSessionStarted
-    fun setIsSpeedSessionStarted(newConditional: Boolean) {
-        _isSpeedSessionStarted = newConditional
-    }
-
     var trackUri: String
         get() = _trackUri.value
         set(value) {
@@ -177,4 +170,20 @@ class MainScreenViewModel : ViewModel() {
 
     var handleAlbumChangeJob: Job? = null
     var loadingTracks: MutableState<Boolean> = mutableStateOf(false)
+
+    /* SPEED */
+    private var _isSpeedSessionStarted by mutableStateOf(false)
+    val isSpeedSessionStarted: Boolean get() = _isSpeedSessionStarted
+    fun setIsSpeedSessionStarted(newConditional: Boolean) {
+        _isSpeedSessionStarted = newConditional
+    }
+
+    private var _currentSpeedAlbumTracks by mutableStateOf(listOf<Pair<SimpleTrackWrapper, Pair<String, String>>>())
+    val currentSpeedAlbumTracks: List<Pair<SimpleTrackWrapper, Pair<String, String>>>
+        get() = _currentSpeedAlbumTracks
+
+    fun setCurrentSpeedAlbumTracks(currentSpeedAlbumTracks: List<Pair<SimpleTrackWrapper, Pair<String, String>>>) {
+        _currentSpeedAlbumTracks = currentSpeedAlbumTracks
+        uniqueTracks =_currentSpeedAlbumTracks.map { it.first }.toSet().toList()
+    }
 }

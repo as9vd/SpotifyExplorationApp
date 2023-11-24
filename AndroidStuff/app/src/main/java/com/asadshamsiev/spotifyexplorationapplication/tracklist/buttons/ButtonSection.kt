@@ -6,6 +6,8 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
@@ -15,6 +17,7 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -48,6 +51,7 @@ fun ButtonRow(
     isLoadingTracks: Boolean
 ) {
     val currentAlbumTracks = remember { viewModel.currentAlbumTracks }
+    val currentSpeedAlbumTracks = remember { viewModel.currentSpeedAlbumTracks }
     val trackStartIndices =
         remember { derivedStateOf { findFirstIndicesOfTracks(currentAlbumTracks) } }
 
@@ -67,7 +71,9 @@ fun ButtonRow(
                 trackStartIndices = trackStartIndices
             )
 
-            SpeedRunAlbumButton(currentAlbumTracks)
+            SpeedRunAlbumButton(
+                currentSpeedAlbumTracks
+            )
         }
 
     }
@@ -78,12 +84,19 @@ fun ButtonRow(
     MainActivity's handleAlbumChange. I'll probably need 2 separate variables. */
 @Composable
 fun SpeedRunAlbumButton(
-    currentAlbumTracks: List<Pair<SimpleTrackWrapper, Pair<String, String>>>
+    currentSpeedAlbumTracks: List<Pair<SimpleTrackWrapper, Pair<String, String>>>
 ) {
     val buttonClicked = remember { mutableStateOf(false) }
 
-    Button(onClick = {}) {
-        Text(text = "Speed")
+    Button(onClick = {
+        buttonClicked.value = !buttonClicked.value
+        print(currentSpeedAlbumTracks)
+    }) {
+        Text("Speed")
+    }
+
+    Column {
+        Text("Size of this fucking array:" + currentSpeedAlbumTracks.size)
     }
 }
 

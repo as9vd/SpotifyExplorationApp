@@ -196,6 +196,7 @@ class MainActivity : ComponentActivity() {
         // Reset current album tracks.
         // Thankfully, this is assuming the album changes, so no unnecessary work here.
         mainScreenViewModel.setCurrentAlbumTracks(ArrayList())
+        mainScreenViewModel.setCurrentSpeedAlbumTracks(ArrayList())
 
         // Kick off the batches. We're at 0 now.
         batchIndex.value = 0
@@ -220,6 +221,11 @@ class MainActivity : ComponentActivity() {
                     // Originally was val updatedAlbumTracks = arrayListOf<Pair<ArrayList<Pair<String, String>>, SimpleTrack>>()
                     val updatedAlbumTracks = ArrayList<Pair<SimpleTrackWrapper, Pair<String, String>>>()
                     val batchTracks = ArrayList<Pair<SimpleTrackWrapper, Pair<String, String>>>()
+
+                    // NEW! Will need to fix this area of code in future, but this is what'll be used for explore mode.
+                    val speedBatchTracks = ArrayList<Pair<SimpleTrackWrapper, Pair<String, String>>>()
+                    val updatedSpeedAlbumTracks = ArrayList<Pair<SimpleTrackWrapper, Pair<String, String>>>()
+
                     var counter = 0
 
                     for (track in album!!.tracks) {
@@ -256,11 +262,20 @@ class MainActivity : ComponentActivity() {
                             batchTracks.add(Pair(SimpleTrackWrapper(track), segment))
                         }
 
+                        for (segment in speedSegments) {
+                            speedBatchTracks.add(Pair(SimpleTrackWrapper(track), segment))
+                        }
+
                         counter++
-                        if (counter % 1 == 0) { // Do it in batches of 3 tracks each.
+                        if (counter % 1 == 0) { // Do it in batches of 1 track each.
                             updatedAlbumTracks.addAll(batchTracks)
                             mainScreenViewModel.setCurrentAlbumTracks(updatedAlbumTracks)
+
+                            updatedSpeedAlbumTracks.addAll(speedBatchTracks)
+                            mainScreenViewModel.setCurrentSpeedAlbumTracks(updatedSpeedAlbumTracks)
+
                             batchTracks.clear()
+                            speedBatchTracks.clear()
                             delay(350L)
 
                             // This is to force recomposition of MainScreen.
@@ -271,6 +286,10 @@ class MainActivity : ComponentActivity() {
                     if (batchTracks.size > 0) {
                         updatedAlbumTracks.addAll(batchTracks)
                         mainScreenViewModel.setCurrentAlbumTracks(ArrayList(updatedAlbumTracks))
+
+                        // Speed too (temporarily, will fix this soon).
+                        updatedSpeedAlbumTracks.addAll(speedBatchTracks)
+                        mainScreenViewModel.setCurrentSpeedAlbumTracks(ArrayList(updatedSpeedAlbumTracks))
 
                         // For the remaining tracks..
                         batchIndex.value += 1
