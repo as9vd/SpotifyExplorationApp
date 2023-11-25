@@ -4,8 +4,11 @@ import android.os.Handler
 import android.util.Log
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.State
+import androidx.lifecycle.viewModelScope
 import com.asadshamsiev.spotifyexplorationapplication.viewmodels.MainScreenViewModel
 import com.spotify.android.appremote.api.SpotifyAppRemote
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 // TODO: Refactoring across the file to put a lot of functions into one common one.
 fun getExploreButtonOnClickFunction(
@@ -231,9 +234,9 @@ fun getSpeedProgressRunnable(
         override fun run() {
             if (spotifyAppRemote != null && spotifyAppRemote.isConnected) {
                 try {
-                    spotifyAppRemote.playerApi.playerState?.setResultCallback { state ->
+                     spotifyAppRemote.playerApi.playerState?.setResultCallback { state ->
                         // TODO: This is not the valid currentPosition when we crack on.
-                        var currentPosition = state.playbackPosition
+                        val currentPosition = state.playbackPosition
 
                         // This is the paired interval (e.g. <"1:28", "2:56">).
                         val currentInterval =
@@ -261,18 +264,21 @@ fun getSpeedProgressRunnable(
 
                                 if (trackToBePlayed == previousTrackPlayed) {
                                     spotifyAppRemote.playerApi.seekTo(startOfNextInterval)
+
+                                    viewModel.setIsNewTrack(false)
                                 } else {
                                     // First interval starts at 0:00 (in this implementation), so
                                     // no need to skip now.
-                                    spotifyAppRemote.playerApi.play(trackToBePlayed.track.uri.uri)
-                                        .setErrorCallback {
-                                            Log.d(
+                                    spotifyAppRemote.playerApi.play(trackToBePlayed.track.uri.uri).setResultCallback {
+                                        Thread.sleep(2500)
+                                    }.setErrorCallback {
+                                        Log.d(
                                                 "errorCallback",
                                                 "Couldn't seek to the start of the next for the new song."
                                             )
                                         }
 
-                                    currentPosition = 0;
+                                    viewModel.setIsNewTrack(true)
                                 }
                             } else {
                                 // If you're at the end (e.g. there are no more tracks), just
@@ -281,15 +287,17 @@ fun getSpeedProgressRunnable(
 
                                 // To reset. Can speed again afterward.
                                 viewModel.setIsSpeedSessionStarted(false)
+                                viewModel.setIsNewTrack(false)
 
                                 handler.value.removeCallbacks(this)
                                 return@setResultCallback
                             }
+                        } else {
+                            viewModel.setIsNewTrack(false)
                         }
 
-
                         if (viewModel.isSpeedSessionStarted) {
-                            handler.value.postDelayed(this, 500)
+                            handler.value.postDelayed(this, 2000L)
                         }
                     }?.setErrorCallback {
                         Log.d("it", it.toString())

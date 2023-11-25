@@ -186,4 +186,17 @@ class MainScreenViewModel : ViewModel() {
         _currentSpeedAlbumTracks = currentSpeedAlbumTracks
         uniqueTracks =_currentSpeedAlbumTracks.map { it.first }.toSet().toList()
     }
+
+    /* BAND-AID CODE FOR BOTH BUTTONS */
+    private var _isNewTrack by mutableStateOf(false)
+    val isNewTrack: Boolean get() = _isNewTrack
+    fun setIsNewTrack(isNewTrack: Boolean) {
+        _isNewTrack = isNewTrack
+    }
+
+    private var _incrementNewTrack by mutableStateOf(false)
+    val incrementNewTrack: Boolean get() = _incrementNewTrack
+    fun setIncrementNewTrack(incrementNewTrack: Boolean) {
+        _incrementNewTrack = incrementNewTrack
+    }
 }
