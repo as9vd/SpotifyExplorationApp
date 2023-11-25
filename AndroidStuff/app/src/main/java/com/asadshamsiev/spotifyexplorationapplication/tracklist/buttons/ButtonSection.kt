@@ -78,20 +78,28 @@ fun ButtonRow(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            ExploreAlbumButton(
-                viewModel = viewModel,
-                currentIntervalIndex = currentIntervalIndex,
-                isLoading = isLoadingTracks,
-                currentAlbumTracks = currentAlbumTracks,
-                trackStartIndices = trackStartIndices
-            )
+            AnimatedVisibility(visible = viewModel.isExploreSessionStarted ||
+                    (!viewModel.isExploreSessionStarted && !viewModel.isSpeedSessionStarted),
+                enter = fadeIn(animationSpec = tween(250))) {
+                ExploreAlbumButton(
+                    viewModel = viewModel,
+                    currentIntervalIndex = currentIntervalIndex,
+                    isLoading = isLoadingTracks,
+                    currentAlbumTracks = currentAlbumTracks,
+                    trackStartIndices = trackStartIndices
+                )
+            }
 
-            SpeedRunAlbumButton(
-                viewModel = viewModel,
-                currentIntervalIndex = currentIntervalIndex,
-                currentSpeedAlbumTracks = currentSpeedAlbumTracks,
-                trackStartIndices = trackStartSpeedIndices
-            )
+            AnimatedVisibility(visible = viewModel.isSpeedSessionStarted ||
+                    (!viewModel.isExploreSessionStarted && !viewModel.isSpeedSessionStarted),
+                enter = fadeIn(animationSpec = tween(250))) {
+                SpeedRunAlbumButton(
+                    viewModel = viewModel,
+                    currentIntervalIndex = currentIntervalIndex,
+                    currentSpeedAlbumTracks = currentSpeedAlbumTracks,
+                    trackStartIndices = trackStartSpeedIndices
+                )
+            }
         }
 
     }
@@ -164,7 +172,13 @@ fun SpeedRunAlbumButton(
             verticalArrangement = Arrangement.Top,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text("Started babe")
+            Button(
+                elevation = ButtonDefaults.elevatedButtonElevation(),
+                border = BorderStroke(1.dp, Color.Black),
+                onClick = onClick
+            ) {
+                Text("Stop Speeding")
+            }
 
             Spacer(modifier = Modifier.size(8.dp))
 

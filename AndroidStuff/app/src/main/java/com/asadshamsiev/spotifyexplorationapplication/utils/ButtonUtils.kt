@@ -133,7 +133,7 @@ fun getExploreProgressRunnable(
 
 
                         if (viewModel.isExploreSessionStarted) {
-                            handler.value.postDelayed(this, 500)
+                            handler.value.postDelayed(this, 2000L)
                         }
                     }?.setErrorCallback {
                         Log.d("it", it.toString())
